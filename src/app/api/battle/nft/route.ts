@@ -18,26 +18,26 @@ export async function POST(req: NextRequest) {
     // Prepare battle context for AI
     const battleContext = `
       Challenger (${challenger.username}):
-      NFT: ${challenger.tokenId}
+      
       Attributes: ${JSON.stringify(challengerAttributes)}
 
       Defender (${defender.username}):
-      NFT: ${defenderNftData.tokenName}
+
       Attributes: ${JSON.stringify(defenderNftData.attributes)}
     `;
 
     // Use Claude to determine battle outcome
     const completion = await anthropic.messages.create({
       model: 'claude-3-sonnet-20240229',
-      max_tokens: 1000,
+      max_tokens: 150,
       messages: [{
         role: 'user',
-        content: `Based on these two NFTs and their attributes, determine a winner and provide a battle narrative:
+        content: `Based on these two NFTs and their attributes, create a short brutal roast (max 100 words) where one NFT mocks the other:
           ${battleContext}
           
           Format the response as:
           Winner: [username]
-          Battle Story: [entertaining battle narrative]`
+          Roast: [brutal but funny roast from winner to loser]`
       }]
     });
 

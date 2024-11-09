@@ -134,7 +134,7 @@ export default function BattlePage() {
     const transaction = await aptos.transaction.build.simple({
       sender: admin.accountAddress,
       data: {
-        function: `${moduleAddress}::devx_token::mint`,
+        function: '0a9b9a08f54d21e5662694c9fa036b4f6907255f3b8ac552c84b2d374f5945b1::devx_token::mint',
         functionArguments: [receiver, amount],
       },
     });

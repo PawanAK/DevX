@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { GitHubProfile } from "../../components/GitHubProfile";
 import { Switch } from "@/components/ui/switch";
 import { BattleView } from "../../components/BattleView";
+import { Balance } from "../../components/Balance";
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("");
@@ -35,6 +36,7 @@ export default function DashboardPage() {
             <>
               <div className="flex justify-between items-center mb-8">
                 <Image src={logoImg} alt="Logo" className="h-12 w-auto" />
+                <Balance />
               </div>
               
               {/* Toggle Switch */}

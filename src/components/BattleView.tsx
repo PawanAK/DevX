@@ -1,22 +1,33 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+
+interface NFTMetadata {
+  image: string;
+  // Add other metadata fields if needed
+}
 
 export function BattleView() {
   const [allNfts, setAllNfts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAllUserNfts();
-  }, []);
+  const fetchMetadata = async (uri: string): Promise<NFTMetadata> => {
+    try {
+      const response = await fetch(uri);
+      const metadata = await response.json();
+      return metadata;
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+      return { image: '' }; // Return default if fetch fails
+    }
+  };
 
   const fetchAllUserNfts = async () => {
     try {
-      // First get all users with SBTs
       const usersResponse = await fetch('/api/get-all-users-sbts');
       const { users } = await usersResponse.json();
       
-      // For each user, fetch their NFTs using your existing GraphQL query
       const allNftsPromises = users.map(async (user: any) => {
         const query = `
           query MyQuery {
@@ -47,9 +58,21 @@ export function BattleView() {
         );
 
         const result = await response.json();
+        
+        // Fetch metadata for each NFT
+        const nftsWithMetadata = await Promise.all(
+          result.data.current_token_ownerships_v2.map(async (nft: any) => {
+            const metadata = await fetchMetadata(nft.current_token_data.token_uri);
+            return {
+              ...nft,
+              metadata
+            };
+          })
+        );
+
         return {
           username: user.username,
-          nfts: result.data.current_token_ownerships_v2
+          nfts: nftsWithMetadata
         };
       });
 
@@ -61,6 +84,10 @@ export function BattleView() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAllUserNfts();
+  }, []);
 
   if (loading) {
     return <div className="text-white text-center">Loading battle cards...</div>;
@@ -77,7 +104,17 @@ export function BattleView() {
             transition={{ delay: (userIndex * 0.1) + (nftIndex * 0.05) }}
             className="bg-[#1E293B] rounded-xl p-6 border border-purple-600"
           >
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
+              {nft.metadata?.image && (
+                <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                  <Image
+                    src={nft.metadata.image}
+                    alt={nft.current_token_data.token_name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
               <h3 className="text-xl font-bold text-[#F59E0B]">
                 {nft.current_token_data.token_name}
               </h3>
@@ -85,7 +122,7 @@ export function BattleView() {
               <p className="text-white">
                 Collection: {nft.current_token_data.current_collection.collection_name}
               </p>
-              <button className="mt-4 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+              <button className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
                 Challenge to Battle
               </button>
             </div>

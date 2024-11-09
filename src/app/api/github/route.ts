@@ -108,7 +108,7 @@ async function getUserDetails(username: string) {
 
     console.log('API payload:', apiPayload);
 
-    const customApiResponse = await fetch('http://172.16.156.117:5000/api/github-profile', {
+    const customApiResponse = await fetch('https://devx-flask.onrender.com/api/github-profile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

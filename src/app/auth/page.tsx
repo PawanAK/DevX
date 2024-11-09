@@ -1,12 +1,11 @@
 "use client";
 import { AuthForm } from "@/components/AuthForm";
 import { motion } from "framer-motion";
-import Image from "next/image";
-import logoImg from "@/assets/images/Telegage_logo.png";
+
 
 export default function AuthPage() {
   return (
-    <div className="bg-black text-white min-h-screen flex items-center justify-center bg-[linear-gradient(to_bottom,#000,#200D42_34%,#4F21A1_65%,#A45EDB_82%)]">
+    <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
       <motion.div 
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -19,7 +18,7 @@ export default function AuthPage() {
           transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
           className="flex justify-center mb-6"
         >
-          <Image src={logoImg} alt="TeleGage Logo" width={80} height={80} />
+          <h1 className="text-4xl font-bold text-[#E2E8F0]">DevX Battle</h1>
         </motion.div>
         <AuthForm />
       </motion.div>

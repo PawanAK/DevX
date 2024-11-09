@@ -45,19 +45,19 @@ export const AuthForm = () => {
   };
 
   return (
-    <div className="bg-gray-900 p-8 rounded-xl shadow-2xl max-w-md w-full mx-auto">
-      <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-transparent bg-clip-text">
-        Welcome to TeleGage
+    <div className="bg-[#1E293B] p-8 rounded-xl shadow-2xl max-w-md w-full mx-auto">
+      <h2 className="text-3xl font-bold mb-6 text-center text-[#E2E8F0]">
+        Join DevX Battle
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="relative">
-          <FaUser className="absolute top-3 left-3 text-gray-400" />
+          <FaUser className="absolute top-3 left-3 text-[#E2E8F0]" />
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-2 pl-10 rounded-lg bg-gray-800 text-white border border-gray-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+            className="w-full p-2 pl-10 rounded-lg bg-[#0F172A] text-[#E2E8F0] border border-[#6D28D9] focus:border-[#4C1D95] focus:ring-2 focus:ring-[#4C1D95] transition-all duration-300"
             placeholder="Username"
             required
           />
@@ -71,12 +71,12 @@ export const AuthForm = () => {
 
         <motion.button
           type="submit"
-          className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300"
+          className="w-full bg-[#6D28D9] hover:bg-[#4C1D95] text-[#E2E8F0] py-2 px-4 rounded-lg transition-all duration-300"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={isLoading}
         >
-          {isLoading ? "Processing..." : "Continue"}
+          {isLoading ? "Processing..." : "Start Your Journey"}
         </motion.button>
       </form>
     </div>

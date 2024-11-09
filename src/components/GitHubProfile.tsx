@@ -6,6 +6,7 @@ import { IoLogoJavascript, IoLogoPython } from "react-icons/io5";
 import { FaJava } from "react-icons/fa";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { IndexerClient } from "aptos";
+import Image from 'next/image';
 
 interface GitHubProfileProps {
   username: string;
@@ -46,6 +47,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   const [error, setError] = useState<string | null>(null);
   const [sbtData, setSbtData] = useState<any>("");
   const [hasSbt, setHasSbt] = useState(false);
+  const [nftMetadata, setNftMetadata] = useState<any>(null);
 
   // Add wallet address from localStorage
   const walletAddress = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '';
@@ -73,11 +75,11 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
           await fetchNFTs();
         } else {
           console.log('User does not have SBT, fetching GitHub data');
-        //   await fetchGitHubData();
+          await fetchGitHubData();
         }
       } catch (err) {
         console.error('Error checking SBT status:', err);
-        // await fetchGitHubData(); // Fallback to GitHub data
+        await fetchGitHubData(); // Fallback to GitHub data
         //getting issues
       }
     };
@@ -85,9 +87,20 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     checkSbtAndFetchData();
   }, [username, account?.address]);
 
+  const fetchMetadata = async (uri: string) => {
+    try {
+      const response = await fetch(uri);
+      const metadata = await response.json();
+      return metadata;
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+      return { image: '' };
+    }
+  };
+
   const fetchNFTs = async () => {
     console.log('Fetching NFTs for account:', account?.address);
-     {
+    {
       const query = `
         query MyQuery {
           current_token_ownerships_v2(
@@ -124,17 +137,13 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
         console.log('NFT data received:', result);
         if (result.data?.current_token_ownerships_v2?.length > 0) {
           console.log('Setting SBT data');
-          // Parse the data properly before setting it
-          setSbtData(result.data); // Changed this line to set the entire data object
+          // Fetch metadata for the NFT
+          const nft = result.data.current_token_ownerships_v2[0];
+          const metadata = await fetchMetadata(nft.current_token_data.token_uri);
+          setSbtData(result.data);
+          setNftMetadata(metadata);
           
-          // Log the details of all SBTs
-          result.data.current_token_ownerships_v2.forEach((sbt: any, index: number) => {
-            console.log(`SBT ${index + 1}:`, {
-              tokenName: sbt.current_token_data.token_name,
-              collectionName: sbt.current_token_data.current_collection.collection_name,
-              tokenUri: sbt.current_token_data.token_uri
-            });
-          });
+          console.log('NFT Metadata:', metadata);
         }
         setLoading(false);
       } catch (err) {
@@ -196,7 +205,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
       console.log('Preparing mint request with payload:', mintPayload);
 
       console.log('Initiating SBT minting transaction...');
-      const mintResponse = await fetch('http://172.16.156.117:5000/api/mint-sbt', {
+      const mintResponse = await fetch('https://devx-flask.onrender.com/api/mint-sbt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -427,25 +436,105 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     <div className="flex flex-col items-center gap-4">
       <motion.div 
         ref={cardRef}
-        className="rounded-xl p-6 shadow-lg border border-opacity-30 max-w-md w-full"
+        className="rounded-xl p-6 shadow-lg border border-opacity-30"
         style={{ 
           borderColor: devConfig.primary,
           background: devConfig.gradient
         }}
       >
-        <div className="text-center border-b pb-4 mb-4">
-          <h1 className="text-2xl font-bold" style={{ color: devConfig.primary }}>
-            My DevX SBT
-          </h1>
+        {/* ID Card Header */}
+        <div 
+          className="text-center border-b pb-4 mb-4"
+          style={{ 
+            borderColor: `${devConfig.primary}40`,
+            background: `linear-gradient(90deg, ${devConfig.primary}10, ${devConfig.secondary}10)`
+          }}
+        >
+          <div className="flex items-center justify-center gap-2">
+            {devConfig.icon}
+            <h1 className="text-lg font-bold" style={{ color: devConfig.primary }}>
+               DevX Card
+            </h1>
+          </div>
         </div>
 
-        {/* SBT Display */}
         <div className="flex flex-col items-center">
-          {/* Add SBT visualization here */}
-          <p className="text-white mt-4">SBT Address: {sbtAddress}</p>
-          {/* Add other SBT metadata display */}
+          {/* Profile Photo with updated glow color */}
+          <motion.div
+            className="relative mb-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div 
+              className="absolute inset-0 rounded-full blur-md opacity-50"
+              style={{ background: `linear-gradient(to right, ${devConfig.primary}, ${devConfig.secondary})` }}
+            ></div>
+            <img
+              src={githubData.avatar_url}
+              alt={`${githubData.name || username}'s avatar`}
+              className="relative w-32 h-32 rounded-full border-4"
+              style={{ borderColor: devConfig.primary }}
+            />
+          </motion.div>
+
+          {/* Basic Info */}
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold text-white">{githubData.name || username}</h2>
+          </div>
+
+          {/* Details Grid */}
+          <div className="w-full space-y-2">
+            <div className="flex items-center gap-2 text-white">
+              <Users className="w-4 h-4" style={{ color: devConfig.primary }} />
+              <span className="text-gray-400">Followers/Following:</span>
+              <span>{githubData.followers}/{githubData.following}</span>
+            </div>
+            <div className="flex items-center gap-2 text-white">
+              <Book className="w-4 h-4" style={{ color: devConfig.primary }} />
+              <span className="text-gray-400">Repositories:</span>
+              <span>{githubData.public_repos}</span>
+            </div>
+          </div>
+
+          {/* Language Section */}
+          {githubData.top_languages?.length > 0 && (
+            <div className="w-full mt-4 pt-4 border-t" style={{ borderColor: `${devConfig.primary}40` }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Code2 className="w-4 h-4" style={{ color: devConfig.primary }} />
+                <span className="text-white font-semibold">Top Languages</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {githubData.top_languages.slice(0, 3).map(({ language, percentage }) => (
+                  <div
+                    key={language}
+                    className="px-2 py-1 rounded-full text-sm"
+                    style={{
+                      background: `linear-gradient(145deg, ${devConfig.primary}20, ${devConfig.secondary}20)`,
+                      border: `1px solid ${devConfig.primary}40`
+                    }}
+                  >
+                    <span className="text-white">{language} </span>
+                    <span className="text-gray-400">{percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
+      
+      {/* Download Button */}
+      <button
+        onClick={saveAsImage}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-opacity-80 transition-colors duration-200"
+        style={{ 
+          background: devConfig.gradient,
+          border: `1px solid ${devConfig.primary}40`
+        }}
+        title="Save as image"
+      >
+        <Download className="w-5 h-5" style={{ color: devConfig.primary }} />
+        <span className="text-white">Save as Image</span>
+      </button>
     </div>
   );
 }; 

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Book, Star, GitFork, Users, MapPin, Building, Code2, Trophy, Activity, Zap, Download } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
-import { IoLogoJavascript } from "react-icons/io5";
+import { IoLogoJavascript, IoLogoPython } from "react-icons/io5";
+import { FaJava } from "react-icons/fa";
 
 interface GitHubProfileProps {
   username: string;
@@ -93,6 +94,18 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
           secondary: '#323330', // JavaScript Dark
           icon: <IoLogoJavascript className="w-8 h-8" />
         };
+      case 'PythonDev':
+        return {
+          primary: '#3776AB', // Python Blue
+          secondary: '#FFD43B', // Python Yellow
+          icon: <IoLogoPython className="w-8 h-8" />
+        };
+      case 'JavaDev':
+        return {
+          primary: '#ED8B00', // Java Orange
+          secondary: '#5382A1', // Java Blue
+          icon: <FaJava className="w-8 h-8" />
+        };
       default:
         return {
           primary: '#6D28D9',
@@ -120,7 +133,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
   if (!githubData) return null;
 
-  const devConfig = getDevTypeConfig(githubData.developer_type);
+  const devConfig = getDevTypeConfig('JSDev');
 
   return (
     <div className="flex flex-col items-center gap-4">

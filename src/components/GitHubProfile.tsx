@@ -4,6 +4,8 @@ import { Book, Star, GitFork, Users, MapPin, Building, Code2, Trophy, Activity, 
 import * as htmlToImage from 'html-to-image';
 import { IoLogoJavascript, IoLogoPython } from "react-icons/io5";
 import { FaJava } from "react-icons/fa";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { IndexerClient } from "aptos";
 
 interface GitHubProfileProps {
   username: string;
@@ -35,39 +37,140 @@ interface GitHubData {
 }
 
 export const GitHubProfile = ({ username }: GitHubProfileProps) => {
+  console.log('GitHubProfile component rendered with username:', username);
+  
+  const { account } = useWallet();
   const cardRef = useRef<HTMLDivElement>(null);
   const [githubData, setGithubData] = useState<GitHubData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [sbtData, setSbtData] = useState<any>("");
+  const [hasSbt, setHasSbt] = useState(false);
+
+  // Add wallet address from localStorage
+  const walletAddress = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '';
 
   useEffect(() => {
-    const fetchGitHubData = async () => {
-      console.log(`Fetching GitHub data for username: ${username}`);
+    console.log('useEffect triggered - checking SBT and fetching data');
+    const checkSbtAndFetchData = async () => {
       try {
-        const response = await fetch(`/api/github?username=${username}`);
+        // Check if user has SBT first
+        console.log('Checking if user has SBT for username:', username);
+        const response = await fetch('/api/check-sbt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username })
+        });
+        
         const data = await response.json();
+        console.log('SBT check response:', data);
         
-        if (!response.ok) {
-          console.error('Error fetching GitHub data:', data.message || 'Failed to fetch GitHub data');
-          throw new Error(data.message || 'Failed to fetch GitHub data');
+        if (data.hasSbt) {
+          console.log('User has SBT, fetching NFT data');
+          setHasSbt(true);
+          await fetchNFTs();
+        } else {
+          console.log('User does not have SBT, fetching GitHub data');
+        //   await fetchGitHubData();
         }
-        
-        console.log('GitHub data fetched successfully:', data);
-        setGithubData(data);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-        console.error('Error occurred:', errorMessage);
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-        console.log('Fetch GitHub data process completed');
+        console.error('Error checking SBT status:', err);
+        // await fetchGitHubData(); // Fallback to GitHub data
+        //getting issues
       }
     };
 
-    if (username) {
-      fetchGitHubData();
+    checkSbtAndFetchData();
+  }, [username, account?.address]);
+
+  const fetchNFTs = async () => {
+    console.log('Fetching NFTs for account:', account?.address);
+     {
+      const query = `
+        query MyQuery {
+          current_token_ownerships_v2(
+            offset: 0
+            where: {owner_address: {_eq: "${walletAddress}"}}
+          ) {
+            owner_address
+            current_token_data {
+              collection_id
+              token_name
+              current_collection {
+                collection_name
+              }
+              token_uri
+            }
+          }
+        }
+      `;    
+
+      try {
+        console.log('Making GraphQL request to fetch NFTs');
+        const response = await fetch(
+          "https://aptos-testnet.nodit.io/zIcivJ82QDnhpUOOfD4ukhm_8To~tqiC/v1/graphql",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query }),
+          }
+        );
+
+        const result = await response.json();
+        console.log('NFT data received:', result);
+        if (result.data?.current_token_ownerships_v2?.length > 0) {
+          console.log('Setting SBT data');
+          // Parse the data properly before setting it
+          setSbtData(result.data); // Changed this line to set the entire data object
+          
+          // Log the details of all SBTs
+          result.data.current_token_ownerships_v2.forEach((sbt: any, index: number) => {
+            console.log(`SBT ${index + 1}:`, {
+              tokenName: sbt.current_token_data.token_name,
+              collectionName: sbt.current_token_data.current_collection.collection_name,
+              tokenUri: sbt.current_token_data.token_uri
+            });
+          });
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching NFT data:', err);
+        setError('Failed to fetch NFT data');
+        setLoading(false);
+      }
     }
-  }, [username]);
+  };
+
+  
+
+  
+
+  const fetchGitHubData = async () => {
+    console.log(`Fetching GitHub data for username: ${username}`);
+    try {
+      const response = await fetch(`/api/github?username=${username}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Error fetching GitHub data:', data.message || 'Failed to fetch GitHub data');
+        throw new Error(data.message || 'Failed to fetch GitHub data');
+      }
+      
+      console.log('GitHub data fetched successfully:', data);
+      setGithubData(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      console.error('Error occurred:', errorMessage);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+      console.log('Fetch GitHub data process completed');
+    }
+  };
 
   const saveAsImage = async () => {
     console.log('Starting SBT minting process');
@@ -80,13 +183,15 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
       const { imageUrl, metadataUrl } = await uploadImageAndMetadata();
       
       const mintPayload = {
-        wallet: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '',
+        wallet: walletAddress,
         username: username,
         nft_uri: metadataUrl,
-        properties: githubData.top_languages?.map(lang => ({
-          label: lang.language,
-          value: lang.percentage.toString()
-        })) || []
+        properties: Array.isArray(githubData.top_languages) 
+          ? githubData.top_languages.map(lang => ({
+              label: lang.language,
+              value: lang.percentage.toString()
+            }))
+          : [] // Provide empty array as fallback
       };
       console.log('Preparing mint request with payload:', mintPayload);
 
@@ -111,7 +216,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          walletAddress: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '',
+          walletAddress: walletAddress,
           sbtAddress: mintResult.collection_address
         })
       });
@@ -132,11 +237,13 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   };
 
   const uploadImageAndMetadata = async () => {
+    console.log('Starting image and metadata upload process');
     const dataUrl = await htmlToImage.toPng(cardRef.current!, {
       quality: 1.0,
       backgroundColor: '#1E293B',
     });
     
+    console.log('Image generated, uploading to server');
     const imageResponse = await fetch('/api/upload', {
       method: 'POST',
       headers: {
@@ -146,6 +253,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     });
 
     const imageData = await imageResponse.json();
+    console.log('Image upload response:', imageData);
     
     if (imageData.error) {
       throw new Error(imageData.error);
@@ -199,6 +307,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
       ]
     };
 
+    console.log('Uploading metadata:', metadata);
     const metadataResponse = await fetch('/api/upload', {
       method: 'POST',
       headers: {
@@ -210,6 +319,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     });
 
     const metadataResult = await metadataResponse.json();
+    console.log('Metadata upload response:', metadataResult);
     
     return {
       imageUrl: imageData.imageUrl,
@@ -218,6 +328,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   };
 
   const getDevTypeConfig = (devType: string) => {
+    console.log('Getting dev type config for:', devType);
     switch (devType) {
       case 'JSDev':
         return {
@@ -251,23 +362,65 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   };
 
   if (loading) {
+    console.log('Rendering loading state');
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#6D28D9]"></div>
+      <div className="text-white text-center p-4">
+        Loading...  
       </div>
     );
   }
 
   if (error) {
+    console.log('Rendering error state:', error);
     return (
       <div className="text-red-500 text-center p-4 rounded-lg bg-red-100/10">
-        Could not find GitHub profile for username: {username}
+        {error}
       </div>
     );
   }
 
-  if (!githubData) return null;
+  if (hasSbt && sbtData) {
+    console.log('Rendering SBT view with data:', sbtData);
+    return (
+      <div className="flex flex-col items-center gap-4">
+        <motion.div 
+          className="rounded-xl p-6 shadow-lg border border-purple-600 bg-[#1E293B]"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-2xl font-bold text-white mb-4">Your DevX SBTs</h2>
+          <div className="space-y-6">
+            {/* Add optional chaining and ensure we're accessing the correct property */}
+            {sbtData?.current_token_ownerships_v2?.map((sbt: any, index: number) => (
+              <div key={index} className="p-4 border border-purple-500 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-purple-500" />
+                  <p className="text-white">Collection: {sbt.current_token_data.current_collection.collection_name}</p>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Star className="w-5 h-5 text-yellow-500" />
+                  <p className="text-white">Token Name: {sbt.current_token_data.token_name}</p>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Activity className="w-5 h-5 text-blue-500" />
+                  <p className="text-white break-all">Token URI: {sbt.current_token_data.token_uri}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
+  // Return existing GitHub profile UI if no SBT
+  if (!githubData) {
+    console.log('No GitHub data available, returning null');
+    return null;
+  }
+
+  console.log('Rendering GitHub profile view');
   const devConfig = getDevTypeConfig(githubData.developer_type);
 
   return (

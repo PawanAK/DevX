@@ -1,10 +1,16 @@
-import { Aptos, Account, AptosConfig, Network, InputViewFunctionData } from "@aptos-labs/ts-sdk";
+import { Aptos, Account, AptosConfig, Network, InputViewFunctionData, Ed25519PrivateKey } from "@aptos-labs/ts-sdk";
 
 export const moduleAddress = "0a9b9a08f54d21e5662694c9fa036b4f6907255f3b8ac552c84b2d374f5945b1";
 export const token = '0xcc12552de21078ebce251c0a09193eb7ea799316c77142165990cd96ea815b34';
 
 const config = new AptosConfig({ network: Network.TESTNET });
 export const aptos = new Aptos(config);
+
+
+const privateKey = new Ed25519PrivateKey(
+    "0x55d8417da962242250e890c71ab846749022efa349b93e8486991173928da295"
+  );
+export const admin = Account.fromPrivateKey({ privateKey });
 
 export const getFaBalance = async (
   ownerAddress: string,

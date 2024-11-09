@@ -6,9 +6,12 @@ import { IoLogoJavascript, IoLogoPython } from "react-icons/io5";
 import { FaJava } from "react-icons/fa";
 import { IndexerClient } from "aptos";
 import Image from 'next/image';
+import { mintCoin, admin } from '../utils/aptos-utils';
+
 
 interface GitHubProfileProps {
   username: string;
+  
 }
 
 interface GitHubData {
@@ -36,7 +39,7 @@ interface GitHubData {
   profile_readme: string | null;
 }
 
-export const GitHubProfile = ({ username }: GitHubProfileProps) => {
+export const GitHubProfile = ({ username, admin }: GitHubProfileProps) => {
   console.log('GitHubProfile component rendered with username:', username);
   
   const cardRef = useRef<HTMLDivElement>(null);
@@ -234,7 +237,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
               label: lang.language,
               value: lang.percentage.toString()
             }))
-          : [] // Provide empty array as fallback
+          : []
       };
       console.log('Preparing mint request with payload:', mintPayload);
 
@@ -249,10 +252,19 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
       const mintResult = await mintResponse.json();
       console.log('SBT Minting transaction details:', mintResult);
-      console.log('Transaction hash:', mintResult.transactionHash);
-      console.log('Token ID:', mintResult.tokenId);
+
+      // After successful SBT minting, mint tokens
+      try {
+        console.log('Initiating token minting...');
+        const tokenAmount = 100; // Define the amount of tokens to mint
+        const txHash = await mintCoin(admin, walletAddress, tokenAmount);
+        console.log('Token minting successful, transaction hash:', txHash);
+      } catch (tokenError) {
+        console.error('Token minting failed:', tokenError);
+        // Continue with the flow even if token minting fails
+      }
       
-      // After successful minting
+      // Continue with existing SBT update logic
       const updateSbtResponse = await fetch('/api/update-sbt', {
         method: 'POST',
         headers: {

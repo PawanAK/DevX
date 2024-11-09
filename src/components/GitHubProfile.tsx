@@ -92,25 +92,29 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
         return {
           primary: '#F7DF1E', // JavaScript Yellow
           secondary: '#323330', // JavaScript Dark
-          icon: <IoLogoJavascript className="w-8 h-8" />
+          icon: <IoLogoJavascript className="w-8 h-8" />,
+          gradient: 'linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%)'
         };
       case 'PythonDev':
         return {
           primary: '#3776AB', // Python Blue
           secondary: '#FFD43B', // Python Yellow
-          icon: <IoLogoPython className="w-8 h-8" />
+          icon: <IoLogoPython className="w-8 h-8" />,
+          gradient: 'linear-gradient(145deg, #1e2936 0%, #2b3f54 100%)'
         };
       case 'JavaDev':
         return {
           primary: '#ED8B00', // Java Orange
           secondary: '#5382A1', // Java Blue
-          icon: <FaJava className="w-8 h-8" />
+          icon: <FaJava className="w-8 h-8" />,
+          gradient: 'linear-gradient(145deg, #2b2320 0%, #3d2f28 100%)'
         };
       default:
         return {
           primary: '#6D28D9',
           secondary: '#F59E0B',
-          icon: null
+          icon: null,
+          gradient: 'linear-gradient(145deg, #1E293B 0%, #1E293B 100%)'
         };
     }
   };
@@ -133,17 +137,26 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
   if (!githubData) return null;
 
-  const devConfig = getDevTypeConfig('JSDev');
+  const devConfig = getDevTypeConfig("JSDev");
 
   return (
     <div className="flex flex-col items-center gap-4">
       <motion.div 
         ref={cardRef}
-        className="bg-[#1E293B] rounded-xl p-6 shadow-lg border border-opacity-30"
-        style={{ borderColor: devConfig.primary }}
+        className="rounded-xl p-6 shadow-lg border border-opacity-30"
+        style={{ 
+          borderColor: devConfig.primary,
+          background: devConfig.gradient
+        }}
       >
         {/* ID Card Header */}
-        <div className="text-center border-b pb-4 mb-4" style={{ borderColor: `${devConfig.primary}40` }}>
+        <div 
+          className="text-center border-b pb-4 mb-4"
+          style={{ 
+            borderColor: `${devConfig.primary}40`,
+            background: `linear-gradient(90deg, ${devConfig.primary}10, ${devConfig.secondary}10)`
+          }}
+        >
           <div className="flex items-center justify-center gap-2">
             {devConfig.icon}
             <h1 className="text-lg font-bold" style={{ color: devConfig.primary }}>
@@ -173,28 +186,17 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
           {/* Basic Info */}
           <div className="text-center mb-4">
             <h2 className="text-2xl font-bold text-white">{githubData.name || username}</h2>
-            {/* <p className="text-gray-400 text-sm mt-1">{githubData.bio}</p> */}
           </div>
 
           {/* Details Grid */}
           <div className="w-full space-y-2">
-            {/* <div className="flex items-center gap-2 text-white">
-              <Building className="w-4 h-4 text-[#F59E0B]" />
-              <span className="text-gray-400">Company:</span>
-              <span>{githubData.company || 'N/A'}</span>
-            </div>
             <div className="flex items-center gap-2 text-white">
-              <MapPin className="w-4 h-4 text-[#F59E0B]" />
-              <span className="text-gray-400">Location:</span>
-              <span>{githubData.location || 'N/A'}</span>
-            </div> */}
-            <div className="flex items-center gap-2 text-white">
-              <Users className="w-4 h-4 text-[#F59E0B]" />
+              <Users className="w-4 h-4" style={{ color: devConfig.primary }} />
               <span className="text-gray-400">Followers/Following:</span>
               <span>{githubData.followers}/{githubData.following}</span>
             </div>
             <div className="flex items-center gap-2 text-white">
-              <Book className="w-4 h-4 text-[#F59E0B]" />
+              <Book className="w-4 h-4" style={{ color: devConfig.primary }} />
               <span className="text-gray-400">Repositories:</span>
               <span>{githubData.public_repos}</span>
             </div>
@@ -202,16 +204,20 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
           {/* Language Section */}
           {githubData.top_languages?.length > 0 && (
-            <div className="w-full mt-4 pt-4 border-t border-[#6D28D9]/30">
+            <div className="w-full mt-4 pt-4 border-t" style={{ borderColor: `${devConfig.primary}40` }}>
               <div className="flex items-center gap-2 mb-2">
-                <Code2 className="w-4 h-4 text-[#F59E0B]" />
+                <Code2 className="w-4 h-4" style={{ color: devConfig.primary }} />
                 <span className="text-white font-semibold">Top Languages</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {githubData.top_languages.slice(0, 3).map(({ language, percentage }) => (
                   <div
                     key={language}
-                    className="bg-[#0F172A] px-2 py-1 rounded-full text-sm"
+                    className="px-2 py-1 rounded-full text-sm"
+                    style={{
+                      background: `linear-gradient(145deg, ${devConfig.primary}20, ${devConfig.secondary}20)`,
+                      border: `1px solid ${devConfig.primary}40`
+                    }}
                   >
                     <span className="text-white">{language} </span>
                     <span className="text-gray-400">{percentage}%</span>
@@ -226,10 +232,14 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
       {/* Download Button */}
       <button
         onClick={saveAsImage}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0F172A] hover:bg-[#6D28D9] transition-colors duration-200"
+        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-opacity-80 transition-colors duration-200"
+        style={{ 
+          background: devConfig.gradient,
+          border: `1px solid ${devConfig.primary}40`
+        }}
         title="Save as image"
       >
-        <Download className="w-5 h-5 text-[#F59E0B]" />
+        <Download className="w-5 h-5" style={{ color: devConfig.primary }} />
         <span className="text-white">Save as Image</span>
       </button>
     </div>

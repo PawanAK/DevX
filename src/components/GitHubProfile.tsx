@@ -104,6 +104,21 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
       console.log('Transaction hash:', mintResult.transactionHash);
       console.log('Token ID:', mintResult.tokenId);
       
+      // After successful minting
+      const updateSbtResponse = await fetch('/api/update-sbt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '',
+          sbtAddress: mintResult.collection_address
+        })
+      });
+
+      const updateResult = await updateSbtResponse.json();
+      console.log('SBT address updated:', updateResult);
+
       return {
         imageUrl,
         metadataUrl,

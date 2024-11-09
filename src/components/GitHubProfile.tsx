@@ -437,8 +437,9 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
               {nftMetadata && nftMetadata.image && (
                 <img 
                   src={nftMetadata.image}
+                  width={500}
+                  height={500}
                   alt={`SBT for ${sbt.current_token_data.token_name}`}
-                  className="w-full rounded-lg"
                 />
               )}
             </div>

@@ -131,22 +131,17 @@ export function BattleView() {
           >
             <div className="flex flex-col gap-4">
               {nft.metadata?.image && (
-                <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                <div className="rounded-lg overflow-hidden">
                   <Image
                     src={nft.metadata.image}
                     alt={nft.current_token_data.token_name}
-                    fill
-                    className="object-cover"
+                    width={500}
+                    height={500}
+                    className="w-full h-auto"
                   />
                 </div>
               )}
-              <h3 className="text-xl font-bold text-[#F59E0B]">
-                {nft.current_token_data.token_name}
-              </h3>
-              <p className="text-white">Owner: {userNfts.username}</p>
-              <p className="text-white">
-                Collection: {nft.current_token_data.current_collection.collection_name}
-              </p>
+              
               <button className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
                 Challenge to Battle
               </button>

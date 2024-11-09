@@ -33,9 +33,7 @@ import {
   UserPlus,
   Trash2,
 } from "lucide-react";
-import NFTPackForm from "@/components/NFTPackForm";
-import AddNFTPackModal from "@/components/AddNFTPackModal";
-import NFTPacksDisplay from "@/components/NFTPacksDisplay";
+
 import { format, parseISO } from "date-fns";
 import React from "react";
 
@@ -155,12 +153,6 @@ const CommunityInfo = ({ community }: { community: Community }) => (
   </div>
 );
 
-interface ChartDataPoint {
-  timestamp: Date;
-  points: number;
-  users: number;
-  nfts: number;
-}
 const ActivityChart = ({
   actions,
   userCount,
@@ -652,16 +644,6 @@ export default function DashboardPage() {
                       {showNFTs ? "Hide NFTs" : "Display NFTs"}
                     </motion.button>
                   </div>
-                  <AddNFTPackModal
-                    isOpen={isNFTPackModalOpen}
-                    onClose={() => setIsNFTPackModalOpen(false)}
-                    onSubmit={handleNFTPackSubmit}
-                  />
-                  {showNFTs && (
-                    <NFTPacksDisplay
-                      communityId={communities[0]?.community_id}
-                    />
-                  )}
                 </>
               )}
             </>

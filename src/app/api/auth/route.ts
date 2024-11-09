@@ -6,29 +6,42 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
     
-    const { username, userId, walletAddress, sbtAddress } = await request.json();
+    const { username, walletAddress } = await request.json();
 
-    if (!username || !userId || !walletAddress) {
+    if (!username || !walletAddress) {
       return NextResponse.json(
-        { message: 'Username, userId, and walletAddress are required' },
+        { message: 'Username and wallet address are required' },
         { status: 400 }
       );
     }
 
-    const user = new User({
+    // Try to find existing user
+    let user = await User.findOne({ walletAddress });
+
+    if (user) {
+      // User exists, return user data
+      return NextResponse.json({
+        message: 'User authenticated successfully',
+        user: {
+          username: user.username,
+          walletAddress: user.walletAddress,
+          sbtAddress: user.sbtAddress
+        }
+      });
+    }
+
+    // User doesn't exist, create new user
+    user = new User({
       username,
-      userId,
-      walletAddress,
-      sbtAddress
+      walletAddress
     });
 
     await user.save();
 
     return NextResponse.json({
-      message: 'User created successfully',
+      message: 'User registered successfully',
       user: {
         username: user.username,
-        userId: user.userId,
         walletAddress: user.walletAddress,
         sbtAddress: user.sbtAddress
       }
@@ -42,7 +55,7 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json(
-      { message: 'Error creating user', error: error.message },
+      { message: 'Error processing request', error: error.message },
       { status: 500 }
     );
   }

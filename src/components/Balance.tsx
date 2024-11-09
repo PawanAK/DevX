@@ -17,7 +17,7 @@ export function Balance() {
       if (userWalletAddress) {
         try {
           const balance = await getFaBalance(userWalletAddress, token);
-          const balanceInDevx = Number(balance) / 100000000;
+          const balanceInDevx = Number(balance) ;
           setBalance(balanceInDevx);
         } catch (error) {
           console.error('Error in fetchBalance:', error);

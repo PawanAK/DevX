@@ -6,7 +6,9 @@ import { IoLogoJavascript, IoLogoPython } from "react-icons/io5";
 import { FaJava } from "react-icons/fa";
 import { IndexerClient } from "aptos";
 import Image from 'next/image';
-import { mintCoin, admin } from '../utils/aptos-utils';
+import { mintCoin } from '../utils/aptos-utils';
+import { Account } from '@aptos-labs/ts-sdk';
+import { Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
 
 
 interface GitHubProfileProps {
@@ -39,7 +41,12 @@ interface GitHubData {
   profile_readme: string | null;
 }
 
-export const GitHubProfile = ({ username, admin }: GitHubProfileProps) => {
+const privateKey = new Ed25519PrivateKey(
+    "0x55d8417da962242250e890c71ab846749022efa349b93e8486991173928da295"
+  );
+const admin = Account.fromPrivateKey({ privateKey });
+
+export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   console.log('GitHubProfile component rendered with username:', username);
   
   const cardRef = useRef<HTMLDivElement>(null);
@@ -256,11 +263,16 @@ export const GitHubProfile = ({ username, admin }: GitHubProfileProps) => {
       // After successful SBT minting, mint tokens
       try {
         console.log('Initiating token minting...');
-        const tokenAmount = 100; // Define the amount of tokens to mint
+        console.log('Wallet address for token minting:', walletAddress);
+        console.log('Admin account for minting:', admin);
+        const tokenAmount = 100;
+        console.log('Token amount to mint:', tokenAmount);
         const txHash = await mintCoin(admin, walletAddress, tokenAmount);
-        console.log('Token minting successful, transaction hash:', txHash);
+        console.log('Token minting successful!');
+        console.log('Transaction hash:', txHash);
       } catch (tokenError) {
-        console.error('Token minting failed:', tokenError);
+        console.error('Token minting failed with error:', tokenError);
+        console.error('Token minting error details:', tokenError instanceof Error ? tokenError.message : tokenError);
         // Continue with the flow even if token minting fails
       }
       

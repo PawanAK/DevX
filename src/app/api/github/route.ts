@@ -95,6 +95,32 @@ async function getUserDetails(username: string) {
     }));
   console.log('Top languages determined:', topLanguages);
 
+  // After calculating topLanguages, prepare and send data to the custom API
+  console.log('Preparing data for custom API');
+  try {
+    
+    const apiPayload = {
+      username: username,
+      bio: profileResponse.bio,
+      programming_languages: topLanguages.map(lang => lang.language)
+    };
+
+    console.log('API payload:', apiPayload);
+
+    const customApiResponse = await fetch('http://172.16.156.117:5000/api/github-profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(apiPayload)
+    });
+
+    const customApiResult = await customApiResponse.json();
+    console.log('Custom API response:', customApiResult);
+  } catch (error) {
+    console.error('Error calling custom API:', error);
+  }
+
   return {
     name: profileResponse.name,
     avatar_url: profileResponse.avatar_url,

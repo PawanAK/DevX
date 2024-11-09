@@ -30,6 +30,7 @@ async function getUserDetails(username: string) {
   let readmeContent: string = '';
   let repoResponse: GitHubRepo[] = [];
   let languageStats: LanguageStats = {};
+  let developerType: string = '';
 
   console.log(`Fetching profile for user: ${username}`);
   try {
@@ -107,7 +108,7 @@ async function getUserDetails(username: string) {
 
     console.log('API payload:', apiPayload);
 
-    const customApiResponse = await fetch('http://172.16.156.117:5000/api/github-profile', {
+    const customApiResponse = await fetch('http://192.168.17.128:5000/api/github-profile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -116,6 +117,7 @@ async function getUserDetails(username: string) {
     });
 
     const customApiResult = await customApiResponse.json();
+    developerType = customApiResult.developer_type;
     console.log('Custom API response:', customApiResult);
   } catch (error) {
     console.error('Error calling custom API:', error);
@@ -131,6 +133,7 @@ async function getUserDetails(username: string) {
     following: profileResponse.following,
     public_repos: profileResponse.public_repos,
     profile_readme: readmeContent,
+    developer_type: developerType,
     top_languages: topLanguages,
     last_15_repositories: repoResponse
       .slice(0, 15)

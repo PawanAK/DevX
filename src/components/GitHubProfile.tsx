@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Book, Star, GitFork, Users, MapPin, Building, Code2, Trophy, Activity, Zap, Download } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
+import { IoLogoJavascript } from "react-icons/io5";
 
 interface GitHubProfileProps {
   username: string;
@@ -28,6 +29,7 @@ interface GitHubData {
     count: number;
     percentage: number;
   }>;
+  developer_type: string;
 }
 
 export const GitHubProfile = ({ username }: GitHubProfileProps) => {
@@ -83,6 +85,23 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     }
   };
 
+  const getDevTypeConfig = (devType: string) => {
+    switch (devType) {
+      case 'JSDev':
+        return {
+          primary: '#F7DF1E', // JavaScript Yellow
+          secondary: '#323330', // JavaScript Dark
+          icon: <IoLogoJavascript className="w-8 h-8" />
+        };
+      default:
+        return {
+          primary: '#6D28D9',
+          secondary: '#F59E0B',
+          icon: null
+        };
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -101,31 +120,40 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
   if (!githubData) return null;
 
+  const devConfig = getDevTypeConfig(githubData.developer_type);
+
   return (
     <div className="flex flex-col items-center gap-4">
       <motion.div 
         ref={cardRef}
-        className="bg-[#1E293B] rounded-xl p-6 shadow-lg border border-[#6D28D9]/30 max-w-[400px]"
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.3 }}
+        className="bg-[#1E293B] rounded-xl p-6 shadow-lg border border-opacity-30"
+        style={{ borderColor: devConfig.primary }}
       >
         {/* ID Card Header */}
-        <div className="text-center border-b border-[#6D28D9]/30 pb-4 mb-4">
-          <h1 className="text-[#F59E0B] text-lg font-bold">GITHUB DEVELOPER ID</h1>
+        <div className="text-center border-b pb-4 mb-4" style={{ borderColor: `${devConfig.primary}40` }}>
+          <div className="flex items-center justify-center gap-2">
+            {devConfig.icon}
+            <h1 className="text-lg font-bold" style={{ color: devConfig.primary }}>
+               DevX Card
+            </h1>
+          </div>
         </div>
 
         <div className="flex flex-col items-center">
-          {/* Profile Photo */}
+          {/* Profile Photo with updated glow color */}
           <motion.div
             className="relative mb-4"
             whileHover={{ scale: 1.05 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-[#6D28D9] to-[#F59E0B] rounded-full blur-md opacity-50"></div>
+            <div 
+              className="absolute inset-0 rounded-full blur-md opacity-50"
+              style={{ background: `linear-gradient(to right, ${devConfig.primary}, ${devConfig.secondary})` }}
+            ></div>
             <img
               src={githubData.avatar_url}
               alt={`${githubData.name || username}'s avatar`}
-              className="relative w-32 h-32 rounded-full border-4 border-[#6D28D9]"
+              className="relative w-32 h-32 rounded-full border-4"
+              style={{ borderColor: devConfig.primary }}
             />
           </motion.div>
 

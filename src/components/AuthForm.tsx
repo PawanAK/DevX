@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { FaUser, FaWallet } from "react-icons/fa";
@@ -11,13 +11,35 @@ export const AuthForm = () => {
   const [username, setUsername] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { account, connected } = useWallet();
+  const { account, connected, connect, wallets } = useWallet();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Auto-connect to the last used wallet
+  useEffect(() => {
+    const autoConnect = async () => {
+      const lastWallet = localStorage.getItem("lastWallet");
+      if (lastWallet && wallets.length > 0) {
+        const wallet = wallets.find(w => w.name === lastWallet);
+        if (wallet) {
+          try {
+            await connect(wallet.name);
+          } catch (error) {
+            console.error("Auto-connect failed:", error);
+          }
+        }
+      }
+    };
+    autoConnect();
+  }, [wallets, connect]);
+
+  const handleWalletLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     if (!connected || !account) {
       setErrorMessage("Please connect your wallet first");
+      setIsLoading(false);
       return;
     }
 
@@ -27,21 +49,48 @@ export const AuthForm = () => {
         walletAddress: account.address
       });
 
-      console.log("Authentication successful", response.data);
-      setSuccessMessage(response.data.message);
-      setErrorMessage("");
-      
-      localStorage.setItem("user", JSON.stringify({
-        username,
-        walletAddress: account.address,
-        has_community: false
-      }));
-      
-      router.push("/dashboard");
+      handleSuccessfulAuth(response.data);
     } catch (error: any) {
       console.error("Error during authentication:", error);
       setErrorMessage(error.response?.data?.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleUsernameLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post("/api/auth", {
+        username
+      });
+
+      handleSuccessfulAuth(response.data);
+    } catch (error: any) {
+      console.error("Error during authentication:", error);
+      setErrorMessage(error.response?.data?.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSuccessfulAuth = (data: any) => {
+    setSuccessMessage(data.message);
+    setErrorMessage("");
+    
+    localStorage.setItem("user", JSON.stringify({
+      username: data.user.username,
+      walletAddress: data.user.walletAddress,
+      has_community: false
+    }));
+
+    if (account) {
+      localStorage.setItem("lastWallet", account.name);
+    }
+    
+    router.push("/dashboard");
   };
 
   return (
@@ -50,7 +99,7 @@ export const AuthForm = () => {
         Welcome to TeleGage
       </h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
         <div className="relative">
           <FaUser className="absolute top-3 left-3 text-gray-400" />
           <input
@@ -72,15 +121,28 @@ export const AuthForm = () => {
           <p className="text-green-500 text-sm mt-2">{successMessage}</p>
         )}
 
-        <motion.button
-          type="submit"
-          className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Continue
-        </motion.button>
-      </form>
+        <div className="flex gap-4">
+          <motion.button
+            onClick={handleUsernameLogin}
+            className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={isLoading}
+          >
+            Login with Username
+          </motion.button>
+
+          <motion.button
+            onClick={handleWalletLogin}
+            className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-2 px-4 rounded-lg hover:opacity-90 transition-all duration-300"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={isLoading}
+          >
+            Connect Wallet
+          </motion.button>
+        </div>
+      </div>
     </div>
   );
 };

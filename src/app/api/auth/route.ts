@@ -8,18 +8,15 @@ export async function POST(request: NextRequest) {
     
     const { username, walletAddress } = await request.json();
 
-    if (!username || !walletAddress) {
-      return NextResponse.json(
-        { message: 'Username and wallet address are required' },
-        { status: 400 }
-      );
-    }
-
-    // Try to find existing user
-    let user = await User.findOne({ walletAddress });
-
-    if (user) {
-      // User exists, return user data
+    // Allow login with just username
+    if (username && !walletAddress) {
+      const user = await User.findOne({ username });
+      if (!user) {
+        return NextResponse.json(
+          { message: 'User not found' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json({
         message: 'User authenticated successfully',
         user: {
@@ -30,7 +27,29 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // User doesn't exist, create new user
+    // Login/Register with wallet
+    if (!username || !walletAddress) {
+      return NextResponse.json(
+        { message: 'Username or wallet address is required' },
+        { status: 400 }
+      );
+    }
+
+    // Try to find existing user by wallet
+    let user = await User.findOne({ walletAddress });
+
+    if (user) {
+      return NextResponse.json({
+        message: 'User authenticated successfully',
+        user: {
+          username: user.username,
+          walletAddress: user.walletAddress,
+          sbtAddress: user.sbtAddress
+        }
+      });
+    }
+
+    // Create new user if wallet is new
     user = new User({
       username,
       walletAddress
@@ -59,4 +78,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

@@ -14,8 +14,10 @@ export function BattleView() {
 
   const fetchMetadata = async (uri: string): Promise<NFTMetadata> => {
     try {
+      console.log('Fetching metadata from URI:', uri);
       const response = await fetch(uri);
       const metadata = await response.json();
+      console.log('Fetched metadata:', metadata);
       return metadata;
     } catch (error) {
       console.error('Error fetching metadata:', error);
@@ -26,20 +28,31 @@ export function BattleView() {
   const fetchAllUserNfts = async () => {
     try {
         const currentUserWallet = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '';
+        console.log('Current user wallet:', currentUserWallet);
       
       const usersResponse = await fetch('/api/get-all-users-sbts');
       const { users } = await usersResponse.json();
+      const sbtAddress = users[0].sbtAddress; // Get sbtAddress from first user
+      console.log('Fetched users:', users);
+      console.log('SBT address:', sbtAddress);
       
       const otherUsers = users.filter((user: any) => 
         user.walletAddress.toLowerCase() !== currentUserWallet?.toLowerCase()
       );
+      console.log('Filtered other users:', otherUsers);
 
       const allNftsPromises = otherUsers.map(async (user: any) => {
+        console.log('Fetching NFTs for user:', user.username);
         const query = `
           query MyQuery {
             current_token_ownerships_v2(
               offset: 0
-              where: {owner_address: {_eq: "${user.walletAddress}"}}
+              where: {
+                owner_address: {_eq: "${user.walletAddress}"},
+                current_token_data: {
+                  collection_id: {_eq: "${sbtAddress}"}
+                }
+              }
             ) {
               owner_address
               current_token_data {
@@ -64,10 +77,12 @@ export function BattleView() {
         );
 
         const result = await response.json();
+        console.log('GraphQL result for user:', user.username, result);
         
         // Fetch metadata for each NFT
         const nftsWithMetadata = await Promise.all(
           result.data.current_token_ownerships_v2.map(async (nft: any) => {
+            console.log('Fetching metadata for NFT:', nft.current_token_data.token_name);
             const metadata = await fetchMetadata(nft.current_token_data.token_uri);
             return {
               ...nft,
@@ -76,6 +91,7 @@ export function BattleView() {
           })
         );
 
+        console.log('NFTs with metadata for user:', user.username, nftsWithMetadata);
         return {
           username: user.username,
           nfts: nftsWithMetadata
@@ -83,6 +99,7 @@ export function BattleView() {
       });
 
       const results = await Promise.all(allNftsPromises);
+      console.log('Final results:', results);
       setAllNfts(results);
     } catch (error) {
       console.error('Error fetching NFTs:', error);
@@ -92,6 +109,7 @@ export function BattleView() {
   };
 
   useEffect(() => {
+    console.log('BattleView component mounted');
     fetchAllUserNfts();
   }, []);
 
@@ -99,6 +117,7 @@ export function BattleView() {
     return <div className="text-white text-center">Loading battle cards...</div>;
   }
 
+  console.log('Rendering battle cards with NFTs:', allNfts);
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {allNfts.map((userNfts, userIndex) => (

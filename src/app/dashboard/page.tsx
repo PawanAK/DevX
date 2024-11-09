@@ -6,7 +6,7 @@ import logoImg from "../../assets/images/Telegage_logo.png";
 import { motion } from "framer-motion";
 import { GitHubProfile } from "../../components/GitHubProfile";
 import { Switch } from "@/components/ui/switch";
-import { BattleView } from "@/components/BattleView";
+import { BattleView } from "../../components/BattleView";
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("");

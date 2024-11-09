@@ -70,100 +70,136 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   }, [username]);
 
   const saveAsImage = async () => {
-    if (cardRef.current === null || !githubData) return;
+    console.log('Starting SBT minting process');
+    if (cardRef.current === null || !githubData) {
+      console.log('Missing required data - cardRef or githubData is null');
+      return;
+    }
     
     try {
-      // First upload the image
-      const dataUrl = await htmlToImage.toPng(cardRef.current, {
-        quality: 1.0,
-        backgroundColor: '#1E293B',
-      });
+      const { imageUrl, metadataUrl } = await uploadImageAndMetadata();
       
-      const imageResponse = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageData: dataUrl }),
-      });
-
-      const imageData = await imageResponse.json();
-      
-      if (imageData.error) {
-        throw new Error(imageData.error);
-      }
-
-      // Then create and upload the metadata JSON
-      const metadata = {
-        name: githubData.name || username,
-        description: `DevX SBT for ${githubData.name || username}`,
-        image: imageData.imageUrl,
-        attributes: [
-          {
-            trait_type: "Bio",
-            value: githubData.bio || ""
-          },
-          {
-            trait_type: "Location",
-            value: githubData.location || ""
-          },
-          {
-            trait_type: "Company",
-            value: githubData.company || ""
-          },
-          {
-            trait_type: "Followers",
-            value: githubData.followers
-          },
-          {
-            trait_type: "Following",
-            value: githubData.following
-          },
-          {
-            trait_type: "Public Repositories",
-            value: githubData.public_repos
-          },
-          {
-            trait_type: "Top Languages",
-            value: githubData.top_languages?.map(lang => `${lang.language} (${lang.percentage}%)`).join(", ") || ""
-          },
-          {
-            trait_type: "Developer Type",
-            value: githubData.developer_type || ""
-          },
-          {
-            trait_type: "GitHub README",
-            value: githubData.profile_readme || "No README available"
-          },
-          {
-            trait_type: "Last Updated",
-            value: new Date().toISOString()
-          }
-        ]
+      const mintPayload = {
+        wallet: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '',
+        username: username,
+        nft_uri: metadataUrl,
+        properties: githubData.top_languages?.map(lang => ({
+          label: lang.language,
+          value: lang.percentage.toString()
+        })) || []
       };
+      console.log('Preparing mint request with payload:', mintPayload);
 
-      // Upload metadata JSON to Cloudinary
-      const metadataResponse = await fetch('/api/upload', {
+      console.log('Initiating SBT minting transaction...');
+      const mintResponse = await fetch('http://172.16.156.117:5000/api/mint-sbt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          jsonData: metadata
-        }),
+        body: JSON.stringify(mintPayload),
       });
 
-      const metadataResult = await metadataResponse.json();
-      console.log('Metadata URL:', metadataResult.imageUrl);
+      const mintResult = await mintResponse.json();
+      console.log('SBT Minting transaction details:', mintResult);
+      console.log('Transaction hash:', mintResult.transactionHash);
+      console.log('Token ID:', mintResult.tokenId);
       
       return {
-        imageUrl: imageData.imageUrl,
-        metadataUrl: metadataResult.imageUrl
+        imageUrl,
+        metadataUrl,
+        mintResult
       };
 
     } catch (err) {
-      console.error('Error uploading:', err);
+      console.error('SBT Minting failed:', err);
+      console.error('Error details:', err instanceof Error ? err.message : err);
     }
+  };
+
+  const uploadImageAndMetadata = async () => {
+    const dataUrl = await htmlToImage.toPng(cardRef.current!, {
+      quality: 1.0,
+      backgroundColor: '#1E293B',
+    });
+    
+    const imageResponse = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ imageData: dataUrl }),
+    });
+
+    const imageData = await imageResponse.json();
+    
+    if (imageData.error) {
+      throw new Error(imageData.error);
+    }
+
+    const metadata = {
+      name: githubData.name || username,
+      description: `DevX SBT for ${githubData.name || username}`,
+      image: imageData.imageUrl,
+      attributes: [
+        {
+          trait_type: "Bio",
+          value: githubData.bio || ""
+        },
+        {
+          trait_type: "Location",
+          value: githubData.location || ""
+        },
+        {
+          trait_type: "Company",
+          value: githubData.company || ""
+        },
+        {
+          trait_type: "Followers",
+          value: githubData.followers
+        },
+        {
+          trait_type: "Following",
+          value: githubData.following
+        },
+        {
+          trait_type: "Public Repositories",
+          value: githubData.public_repos
+        },
+        {
+          trait_type: "Top Languages",
+          value: githubData.top_languages?.map(lang => `${lang.language} (${lang.percentage}%)`).join(", ") || ""
+        },
+        {
+          trait_type: "Developer Type",
+          value: githubData.developer_type || ""
+        },
+        {
+          trait_type: "GitHub README",
+          value: githubData.profile_readme || "No README available"
+        },
+        {
+          trait_type: "Last Updated",
+          value: new Date().toISOString()
+        }
+      ]
+    };
+
+    const metadataResponse = await fetch('/api/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        jsonData: metadata
+      }),
+    });
+
+    const metadataResult = await metadataResponse.json();
+    
+    return {
+      imageUrl: imageData.imageUrl,
+      metadataUrl: metadataResult.imageUrl
+    };
   };
 
   const getDevTypeConfig = (devType: string) => {
@@ -217,7 +253,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
   if (!githubData) return null;
 
-  const devConfig = getDevTypeConfig("JSDev");
+  const devConfig = getDevTypeConfig(githubData.developer_type);
 
   return (
     <div className="flex flex-col items-center gap-4">

@@ -4,7 +4,6 @@ import { Book, Star, GitFork, Users, MapPin, Building, Code2, Trophy, Activity, 
 import * as htmlToImage from 'html-to-image';
 import { IoLogoJavascript, IoLogoPython } from "react-icons/io5";
 import { FaJava } from "react-icons/fa";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { IndexerClient } from "aptos";
 import Image from 'next/image';
 
@@ -40,14 +39,14 @@ interface GitHubData {
 export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   console.log('GitHubProfile component rendered with username:', username);
   
-  const { account } = useWallet();
   const cardRef = useRef<HTMLDivElement>(null);
   const [githubData, setGithubData] = useState<GitHubData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [sbtData, setSbtData] = useState<any>("");
+  const [sbtData, setSbtData] = useState<any>(null);
   const [hasSbt, setHasSbt] = useState(false);
   const [nftMetadata, setNftMetadata] = useState<any>(null);
+  const [sbtAddress, setSbtAddress] = useState<string | null>(null);
 
   // Add wallet address from localStorage
   const walletAddress = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '';
@@ -56,7 +55,6 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     console.log('useEffect triggered - checking SBT and fetching data');
     const checkSbtAndFetchData = async () => {
       try {
-        // Check if user has SBT first
         console.log('Checking if user has SBT for username:', username);
         const response = await fetch('/api/check-sbt', {
           method: 'POST',
@@ -67,25 +65,30 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
         });
         
         const data = await response.json();
-        console.log('SBT check response:', data);
+        console.log('SBT check response:', data.sbtAddress);
+        setSbtAddress(data.sbtAddress);
         
         if (data.hasSbt) {
           console.log('User has SBT, fetching NFT data');
           setHasSbt(true);
-          await fetchNFTs();
         } else {
           console.log('User does not have SBT, fetching GitHub data');
           await fetchGitHubData();
         }
       } catch (err) {
         console.error('Error checking SBT status:', err);
-        await fetchGitHubData(); // Fallback to GitHub data
-        //getting issues
+        await fetchGitHubData();
       }
     };
 
     checkSbtAndFetchData();
-  }, [username, account?.address]);
+  }, [username, walletAddress]);
+
+  useEffect(() => {
+    if (hasSbt && sbtAddress) {
+      fetchNFTs();
+    }
+  }, [sbtAddress, hasSbt]);
 
   const fetchMetadata = async (uri: string) => {
     try {
@@ -99,13 +102,24 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   };
 
   const fetchNFTs = async () => {
-    console.log('Fetching NFTs for account:', account?.address);
+    console.log('Fetching NFTs for address:', walletAddress);
     {
+      // Get sbtAddress from localStorage
+      const user = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+    
+      console.log('SBT Address:', sbtAddress);
+      console.log('Wallet Address:', walletAddress);
+
       const query = `
         query MyQuery {
           current_token_ownerships_v2(
             offset: 0
-            where: {owner_address: {_eq: "${walletAddress}"}}
+            where: {
+              owner_address: {_eq: "${walletAddress}"},
+              current_token_data: {
+                collection_id: {_eq: "${sbtAddress}"}
+              }
+            }
           ) {
             owner_address
             current_token_data {
@@ -391,16 +405,15 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   if (hasSbt && sbtData) {
     console.log('Rendering SBT view with data:', sbtData);
     return (
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 w-full">
         <motion.div 
-          className="rounded-xl p-6 shadow-lg border border-purple-600 bg-[#1E293B]"
+          className="rounded-xl p-6 shadow-lg border border-purple-600 bg-[#1E293B] w-full max-w-3xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <h2 className="text-2xl font-bold text-white mb-4">Your DevX SBTs</h2>
           <div className="space-y-6">
-            {/* Add optional chaining and ensure we're accessing the correct property */}
             {sbtData?.current_token_ownerships_v2?.map((sbt: any, index: number) => (
               <div key={index} className="p-4 border border-purple-500 rounded-lg">
                 <div className="flex items-center gap-2">
@@ -414,6 +427,13 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
                 <div className="flex items-center gap-2 mt-2">
                   <Activity className="w-5 h-5 text-blue-500" />
                   <p className="text-white break-all">Token URI: {sbt.current_token_data.token_uri}</p>
+                </div>
+                <div className="mt-4">
+                  <img 
+                    src={`${sbt.current_token_data.token_uri.replace('metadata', 'roasts').replace('.json', '.png')}`}
+                    alt={`SBT for ${sbt.current_token_data.token_name}`}
+                    className="w-full rounded-lg"
+                  />
                 </div>
               </div>
             ))}

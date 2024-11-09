@@ -21,44 +21,79 @@ interface GitHubRepo {
   fork: boolean;
 }
 
+interface LanguageStats {
+  [key: string]: number;
+}
+
 async function getUserDetails(username: string) {
   let profileResponse: GitHubProfile | null = null;
   let readmeContent: string = '';
   let repoResponse: GitHubRepo[] = [];
+  let languageStats: LanguageStats = {};
 
+  console.log(`Fetching profile for user: ${username}`);
   try {
     const response = await fetch(`https://api.github.com/users/${username}`);
+    
     profileResponse = await response.json();
 
     if (!response.ok || !profileResponse) {
+      console.error('Profile not found for user:', username);
       throw new Error('Profile not found');
     }
+    console.log('Profile fetched successfully:', profileResponse);
   } catch (error) {
     console.error('Error fetching profile:', error);
     throw new Error('Could not fetch profile');
   }
 
+  console.log(`Fetching README for user: ${username}`);
   try {
     const readmeResponse = await fetch(`https://raw.githubusercontent.com/${username}/${username}/master/README.md`);
     if (readmeResponse.ok) {
       readmeContent = await readmeResponse.text();
+      console.log('README fetched successfully');
+    } else {
+      console.log('README not found for user:', username);
     }
   } catch (error) {
     console.error('Error fetching README:', error);
     readmeContent = '';
   }
 
+  console.log(`Fetching repositories for user: ${username}`);
   try {
-    const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated`);
+    const response = await fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=100`);
     repoResponse = await response.json();
 
     if (!response.ok || !repoResponse) {
+      console.error('Repositories not found for user:', username);
       throw new Error('Repositories not found');
     }
+    console.log('Repositories fetched successfully:', repoResponse.length);
+
+    // Fetch languages for each repository
+    for (const repo of repoResponse) {
+      if (repo.language) {
+        languageStats[repo.language] = (languageStats[repo.language] || 0) + 1;
+      }
+    }
+    console.log('Language statistics calculated:', languageStats);
   } catch (error) {
     console.error('Error fetching repositories:', error);
     throw new Error('Could not fetch repositories');
   }
+
+  // Sort languages by usage and get top 3
+  const topLanguages = Object.entries(languageStats)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([language, count]) => ({
+      language,
+      count,
+      percentage: Math.round((count / repoResponse.length) * 100)
+    }));
+  console.log('Top languages determined:', topLanguages);
 
   return {
     name: profileResponse.name,
@@ -70,6 +105,7 @@ async function getUserDetails(username: string) {
     following: profileResponse.following,
     public_repos: profileResponse.public_repos,
     profile_readme: readmeContent,
+    top_languages: topLanguages,
     last_15_repositories: repoResponse
       .slice(0, 15)
       .map((repo: GitHubRepo) => ({
@@ -87,14 +123,17 @@ export async function GET(request: NextRequest) {
   const username = searchParams.get('username');
 
   if (!username) {
+    console.error('Username is required but not provided');
     return NextResponse.json({ message: 'Username is required' }, { status: 400 });
   }
 
+  console.log(`Received request to fetch GitHub data for username: ${username}`);
   try {
     const githubData = await getUserDetails(username);
+    console.log('GitHub data fetched successfully for username:', username);
     return NextResponse.json(githubData);
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error fetching GitHub data for username:', username, error);
     return NextResponse.json(
       { message: 'Error fetching GitHub data' },
       { status: 500 }

@@ -5,9 +5,7 @@ import Image from "next/image"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 
-import ArrowIcon from "../assets/icons/arrow-w.svg"
-import cursorImage from "../assets/images/cursor.png"
-import messageImage from "../assets/images/message.png"
+
 
 export const Hero = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -36,27 +34,13 @@ export const Hero = () => {
               className="absolute right-[576px] top-[120px]"
               style={{ translateY }}
             >
-              <Image
-                src={cursorImage}
-                alt="Cursor"
-                height={200}
-                width={200}
-                className="max-w-none"
-                draggable="false"
-              />
+              
             </motion.div>
             <motion.div
               className="absolute left-[600px] top-[62px]"
               style={{ translateY }}
             >
-              <Image
-                src={messageImage}
-                alt="Message"
-                height={200}
-                width={200}
-                className="max-w-none"
-                draggable="false"
-              />
+              
             </motion.div>
           </div>
         </div>

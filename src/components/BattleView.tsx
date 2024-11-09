@@ -141,12 +141,14 @@ export function BattleView() {
           username: challengerUsername,
           nftData: challengerMetadata,
           tokenId: challengerNft.current_token_data.token_name,
-          nftUri: challengerNft.current_token_data.token_uri
+          nftUri: challengerNft.current_token_data.token_uri,
+          avatar: challengerMetadata.image
         },
         defender: {
           username: currentUser.username,
           walletAddress: currentUser.walletAddress,
-          nftUri: challengerNft.current_token_data.token_uri
+          nftUri: challengerNft.current_token_data.token_uri,
+          avatar: currentUser.avatar
         }
       };
       

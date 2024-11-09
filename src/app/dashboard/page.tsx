@@ -35,7 +35,13 @@ export default function DashboardPage() {
           {username && (
             <>
               <div className="flex justify-between items-center mb-8">
-                <Image src={logoImg} alt="Logo" className="h-12 w-auto" />
+                <div className="flex items-center gap-4">
+                  <Image src={logoImg} alt="Logo" className="h-12 w-auto" />
+                  <div className="flex flex-col">
+                    <span className="text-gray-400 text-sm">Connected as</span>
+                    <span className="text-white font-medium">{username}</span>
+                  </div>
+                </div>
                 <Balance />
               </div>
               

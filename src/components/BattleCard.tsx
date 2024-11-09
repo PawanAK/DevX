@@ -20,18 +20,15 @@ export function BattleCard({ nft, username, onChallenge }: BattleCardProps) {
           <Image
             src={nft.metadata.image}
             alt={nft.current_token_data.token_name}
-            layout="fill"
-            objectFit="cover"
-            className="transition-transform hover:scale-105"
+            width={500}
+            height={500}
+            className="transition-transform hover:scale-105 "
           />
         </div>
 
         {/* NFT Details */}
         <div className="space-y-2">
-          <h3 className="text-xl font-bold text-white">
-            {nft.current_token_data.token_name}
-          </h3>
-          <p className="text-gray-400">Owner: {username}</p>
+          
           
           {/* Battle Button */}
           <button

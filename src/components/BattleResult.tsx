@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 
 interface BattleResultProps {
   battleResult: {
@@ -7,6 +8,8 @@ interface BattleResultProps {
     battleResult: string;
     challenger: string;
     defender: string;
+    challengerAvatar?: string;
+    defenderAvatar?: string;
   };
   onClose: () => void;
 }
@@ -27,7 +30,6 @@ export function BattleResult({ battleResult, onClose }: BattleResultProps) {
         exit={{ scale: 0.9 }}
         className="bg-[#1E293B] rounded-xl p-6 max-w-2xl w-full relative"
       >
-        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white"
@@ -37,11 +39,30 @@ export function BattleResult({ battleResult, onClose }: BattleResultProps) {
 
         {/* Battle Result Header */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-white mb-2">Battle Results</h2>
-          <div className="flex justify-center gap-4 text-sm">
-            <span className="text-purple-400">{battleResult.challenger}</span>
-            <span className="text-gray-400">vs</span>
-            <span className="text-purple-400">{battleResult.defender}</span>
+          <h2 className="text-2xl font-bold text-white mb-6">Battle Results</h2>
+          
+          {/* Avatars and VS Section */}
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-center">
+              <Avatar className="w-20 h-20 mx-auto mb-2 border-2 border-purple-500">
+                <AvatarImage src={battleResult.challengerAvatar || '/default-avatar.png'} />
+                <AvatarFallback>{battleResult.challenger[0]}</AvatarFallback>
+              </Avatar>
+              <span className="text-purple-400">{battleResult.challenger}</span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-2xl font-bold text-gray-400 my-2">VS</div>
+              <div className="w-12 h-0.5 bg-gray-600"></div>
+            </div>
+
+            <div className="text-center">
+              <Avatar className="w-20 h-20 mx-auto mb-2 border-2 border-purple-500">
+                <AvatarImage src={battleResult.defenderAvatar || '/default-avatar.png'} />
+                <AvatarFallback>{battleResult.defender[0]}</AvatarFallback>
+              </Avatar>
+              <span className="text-purple-400">{battleResult.defender}</span>
+            </div>
           </div>
         </div>
 

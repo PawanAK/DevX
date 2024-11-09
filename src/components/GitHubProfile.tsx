@@ -31,6 +31,7 @@ interface GitHubData {
     percentage: number;
   }>;
   developer_type: string;
+  profile_readme: string | null;
 }
 
 export const GitHubProfile = ({ username }: GitHubProfileProps) => {
@@ -69,20 +70,99 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   }, [username]);
 
   const saveAsImage = async () => {
-    if (cardRef.current === null) return;
+    if (cardRef.current === null || !githubData) return;
     
     try {
+      // First upload the image
       const dataUrl = await htmlToImage.toPng(cardRef.current, {
         quality: 1.0,
         backgroundColor: '#1E293B',
       });
       
-      const link = document.createElement('a');
-      link.download = `${username}-github-card.png`;
-      link.href = dataUrl;
-      link.click();
+      const imageResponse = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageData: dataUrl }),
+      });
+
+      const imageData = await imageResponse.json();
+      
+      if (imageData.error) {
+        throw new Error(imageData.error);
+      }
+
+      // Then create and upload the metadata JSON
+      const metadata = {
+        name: githubData.name || username,
+        description: `DevX SBT for ${githubData.name || username}`,
+        image: imageData.imageUrl,
+        attributes: [
+          {
+            trait_type: "Bio",
+            value: githubData.bio || ""
+          },
+          {
+            trait_type: "Location",
+            value: githubData.location || ""
+          },
+          {
+            trait_type: "Company",
+            value: githubData.company || ""
+          },
+          {
+            trait_type: "Followers",
+            value: githubData.followers
+          },
+          {
+            trait_type: "Following",
+            value: githubData.following
+          },
+          {
+            trait_type: "Public Repositories",
+            value: githubData.public_repos
+          },
+          {
+            trait_type: "Top Languages",
+            value: githubData.top_languages?.map(lang => `${lang.language} (${lang.percentage}%)`).join(", ") || ""
+          },
+          {
+            trait_type: "Developer Type",
+            value: githubData.developer_type || ""
+          },
+          {
+            trait_type: "GitHub README",
+            value: githubData.profile_readme || "No README available"
+          },
+          {
+            trait_type: "Last Updated",
+            value: new Date().toISOString()
+          }
+        ]
+      };
+
+      // Upload metadata JSON to Cloudinary
+      const metadataResponse = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          jsonData: metadata
+        }),
+      });
+
+      const metadataResult = await metadataResponse.json();
+      console.log('Metadata URL:', metadataResult.imageUrl);
+      
+      return {
+        imageUrl: imageData.imageUrl,
+        metadataUrl: metadataResult.imageUrl
+      };
+
     } catch (err) {
-      console.error('Error saving image:', err);
+      console.error('Error uploading:', err);
     }
   };
 

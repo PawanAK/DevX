@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Book, Star, GitFork, Users, MapPin, Building, Code2, Trophy, Activity, Zap } from 'lucide-react';
+import { Book, Star, GitFork, Users, MapPin, Building, Code2, Trophy, Activity, Zap, Download } from 'lucide-react';
+import * as htmlToImage from 'html-to-image';
 
 interface GitHubProfileProps {
   username: string;
@@ -30,6 +31,7 @@ interface GitHubData {
 }
 
 export const GitHubProfile = ({ username }: GitHubProfileProps) => {
+  const cardRef = useRef<HTMLDivElement>(null);
   const [githubData, setGithubData] = useState<GitHubData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +65,24 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     }
   }, [username]);
 
+  const saveAsImage = async () => {
+    if (cardRef.current === null) return;
+    
+    try {
+      const dataUrl = await htmlToImage.toPng(cardRef.current, {
+        quality: 1.0,
+        backgroundColor: '#1E293B',
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${username}-github-card.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Error saving image:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -82,82 +102,95 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   if (!githubData) return null;
 
   return (
-    <motion.div 
-      className="bg-[#1E293B] rounded-xl p-6 shadow-lg border border-[#6D28D9]/30 max-w-[400px]"
-      initial={{ scale: 0.95 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* ID Card Header */}
-      <div className="text-center border-b border-[#6D28D9]/30 pb-4 mb-4">
-        <h1 className="text-[#F59E0B] text-lg font-bold">GITHUB DEVELOPER ID</h1>
-      </div>
-
-      <div className="flex flex-col items-center">
-        {/* Profile Photo */}
-        <motion.div
-          className="relative mb-4"
-          whileHover={{ scale: 1.05 }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#6D28D9] to-[#F59E0B] rounded-full blur-md opacity-50"></div>
-          <img
-            src={githubData.avatar_url}
-            alt={`${githubData.name || username}'s avatar`}
-            className="relative w-32 h-32 rounded-full border-4 border-[#6D28D9]"
-          />
-        </motion.div>
-
-        {/* Basic Info */}
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold text-white">{githubData.name || username}</h2>
-          {/* <p className="text-gray-400 text-sm mt-1">{githubData.bio}</p> */}
+    <div className="flex flex-col items-center gap-4">
+      <motion.div 
+        ref={cardRef}
+        className="bg-[#1E293B] rounded-xl p-6 shadow-lg border border-[#6D28D9]/30 max-w-[400px]"
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* ID Card Header */}
+        <div className="text-center border-b border-[#6D28D9]/30 pb-4 mb-4">
+          <h1 className="text-[#F59E0B] text-lg font-bold">GITHUB DEVELOPER ID</h1>
         </div>
 
-        {/* Details Grid */}
-        <div className="w-full space-y-2">
-          {/* <div className="flex items-center gap-2 text-white">
-            <Building className="w-4 h-4 text-[#F59E0B]" />
-            <span className="text-gray-400">Company:</span>
-            <span>{githubData.company || 'N/A'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-white">
-            <MapPin className="w-4 h-4 text-[#F59E0B]" />
-            <span className="text-gray-400">Location:</span>
-            <span>{githubData.location || 'N/A'}</span>
-          </div> */}
-          <div className="flex items-center gap-2 text-white">
-            <Users className="w-4 h-4 text-[#F59E0B]" />
-            <span className="text-gray-400">Followers/Following:</span>
-            <span>{githubData.followers}/{githubData.following}</span>
-          </div>
-          <div className="flex items-center gap-2 text-white">
-            <Book className="w-4 h-4 text-[#F59E0B]" />
-            <span className="text-gray-400">Repositories:</span>
-            <span>{githubData.public_repos}</span>
-          </div>
-        </div>
+        <div className="flex flex-col items-center">
+          {/* Profile Photo */}
+          <motion.div
+            className="relative mb-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[#6D28D9] to-[#F59E0B] rounded-full blur-md opacity-50"></div>
+            <img
+              src={githubData.avatar_url}
+              alt={`${githubData.name || username}'s avatar`}
+              className="relative w-32 h-32 rounded-full border-4 border-[#6D28D9]"
+            />
+          </motion.div>
 
-        {/* Language Section */}
-        {githubData.top_languages?.length > 0 && (
-          <div className="w-full mt-4 pt-4 border-t border-[#6D28D9]/30">
-            <div className="flex items-center gap-2 mb-2">
-              <Code2 className="w-4 h-4 text-[#F59E0B]" />
-              <span className="text-white font-semibold">Top Languages</span>
+          {/* Basic Info */}
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold text-white">{githubData.name || username}</h2>
+            {/* <p className="text-gray-400 text-sm mt-1">{githubData.bio}</p> */}
+          </div>
+
+          {/* Details Grid */}
+          <div className="w-full space-y-2">
+            {/* <div className="flex items-center gap-2 text-white">
+              <Building className="w-4 h-4 text-[#F59E0B]" />
+              <span className="text-gray-400">Company:</span>
+              <span>{githubData.company || 'N/A'}</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {githubData.top_languages.slice(0, 3).map(({ language, percentage }) => (
-                <div
-                  key={language}
-                  className="bg-[#0F172A] px-2 py-1 rounded-full text-sm"
-                >
-                  <span className="text-white">{language} </span>
-                  <span className="text-gray-400">{percentage}%</span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 text-white">
+              <MapPin className="w-4 h-4 text-[#F59E0B]" />
+              <span className="text-gray-400">Location:</span>
+              <span>{githubData.location || 'N/A'}</span>
+            </div> */}
+            <div className="flex items-center gap-2 text-white">
+              <Users className="w-4 h-4 text-[#F59E0B]" />
+              <span className="text-gray-400">Followers/Following:</span>
+              <span>{githubData.followers}/{githubData.following}</span>
+            </div>
+            <div className="flex items-center gap-2 text-white">
+              <Book className="w-4 h-4 text-[#F59E0B]" />
+              <span className="text-gray-400">Repositories:</span>
+              <span>{githubData.public_repos}</span>
             </div>
           </div>
-        )}
-      </div>
-    </motion.div>
+
+          {/* Language Section */}
+          {githubData.top_languages?.length > 0 && (
+            <div className="w-full mt-4 pt-4 border-t border-[#6D28D9]/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Code2 className="w-4 h-4 text-[#F59E0B]" />
+                <span className="text-white font-semibold">Top Languages</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {githubData.top_languages.slice(0, 3).map(({ language, percentage }) => (
+                  <div
+                    key={language}
+                    className="bg-[#0F172A] px-2 py-1 rounded-full text-sm"
+                  >
+                    <span className="text-white">{language} </span>
+                    <span className="text-gray-400">{percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+      
+      {/* Download Button */}
+      <button
+        onClick={saveAsImage}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0F172A] hover:bg-[#6D28D9] transition-colors duration-200"
+        title="Save as image"
+      >
+        <Download className="w-5 h-5 text-[#F59E0B]" />
+        <span className="text-white">Save as Image</span>
+      </button>
+    </div>
   );
 }; 

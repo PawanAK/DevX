@@ -25,10 +25,16 @@ export function BattleView() {
 
   const fetchAllUserNfts = async () => {
     try {
+        const currentUserWallet = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '';
+      
       const usersResponse = await fetch('/api/get-all-users-sbts');
       const { users } = await usersResponse.json();
       
-      const allNftsPromises = users.map(async (user: any) => {
+      const otherUsers = users.filter((user: any) => 
+        user.walletAddress.toLowerCase() !== currentUserWallet?.toLowerCase()
+      );
+
+      const allNftsPromises = otherUsers.map(async (user: any) => {
         const query = `
           query MyQuery {
             current_token_ownerships_v2(

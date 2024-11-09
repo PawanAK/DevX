@@ -46,9 +46,7 @@ export const AuthForm = () => {
 
   return (
     <div className="bg-[#1E293B] p-8 rounded-xl shadow-2xl max-w-md w-full mx-auto">
-      <h2 className="text-3xl font-bold mb-6 text-center text-[#E2E8F0]">
-        Join DevX Battle
-      </h2>
+      
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="relative">

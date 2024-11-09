@@ -413,34 +413,17 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-2xl font-bold text-white mb-4">Your DevX SBTs</h2>
-          <div className="space-y-6">
-            {sbtData?.current_token_ownerships_v2?.map((sbt: any, index: number) => (
-              <div key={index} className="p-4 border border-purple-500 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-purple-500" />
-                  <p className="text-white">Collection: {sbt.current_token_data.current_collection.collection_name}</p>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  <p className="text-white">Token Name: {sbt.current_token_data.token_name}</p>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <Activity className="w-5 h-5 text-blue-500" />
-                  <p className="text-white break-all">Token URI: {sbt.current_token_data.token_uri}</p>
-                </div>
-                <div className="mt-4">
-                  {nftMetadata && nftMetadata.image && (
-                    <img 
-                      src={nftMetadata.image}
-                      alt={`SBT for ${sbt.current_token_data.token_name}`}
-                      className="w-full rounded-lg"
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          {sbtData?.current_token_ownerships_v2?.map((sbt: any, index: number) => (
+            <div key={index}>
+              {nftMetadata && nftMetadata.image && (
+                <img 
+                  src={nftMetadata.image}
+                  alt={`SBT for ${sbt.current_token_data.token_name}`}
+                  className="w-full rounded-lg"
+                />
+              )}
+            </div>
+          ))}
         </motion.div>
       </div>
     );

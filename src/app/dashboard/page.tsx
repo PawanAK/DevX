@@ -5,10 +5,13 @@ import Image from "next/image";
 import logoImg from "../../assets/images/Telegage_logo.png";
 import { motion } from "framer-motion";
 import { GitHubProfile } from "../../components/GitHubProfile";
+import { Switch } from "@/components/ui/switch";
+import { BattleView } from "@/components/BattleView";
 
 export default function DashboardPage() {
   const [username, setUsername] = useState("");
   const router = useRouter();
+  const [view, setView] = useState<"profile" | "battle">("profile");
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -34,10 +37,26 @@ export default function DashboardPage() {
                 <Image src={logoImg} alt="Logo" className="h-12 w-auto" />
               </div>
               
-              {/* GitHub Profile Section */}
-              <div className="mt-8">
-                <GitHubProfile username={username} />
+              {/* Toggle Switch */}
+              <div className="flex justify-center items-center gap-4 mb-8">
+                <span className={`text-white ${view === "profile" ? "opacity-100" : "opacity-50"}`}>
+                  My Profile
+                </span>
+                <Switch
+                  checked={view === "battle"}
+                  onCheckedChange={(checked) => setView(checked ? "battle" : "profile")}
+                />
+                <span className={`text-white ${view === "battle" ? "opacity-100" : "opacity-50"}`}>
+                  Battle
+                </span>
               </div>
+
+              {/* Content */}
+              {view === "profile" ? (
+                <GitHubProfile username={username} />
+              ) : (
+                <BattleView />
+              )}
             </>
           )}
         </motion.div>

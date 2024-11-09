@@ -47,6 +47,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   const [hasSbt, setHasSbt] = useState(false);
   const [nftMetadata, setNftMetadata] = useState<any>(null);
   const [sbtAddress, setSbtAddress] = useState<string | null>(null);
+  const [isMinting, setIsMinting] = useState(false);
 
   // Add wallet address from localStorage
   const walletAddress = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).walletAddress : '';
@@ -83,6 +84,24 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
     checkSbtAndFetchData();
   }, [username, walletAddress]);
+
+  useEffect(() => {
+    const autoMint = async () => {
+      if (githubData && !hasSbt && !isMinting) {
+        setIsMinting(true);
+        try {
+          console.log('Automatically triggering minting process');
+          await saveAsImage();
+        } catch (error) {
+          console.error('Auto-minting failed:', error);
+        } finally {
+          setIsMinting(false);
+        }
+      }
+    };
+
+    autoMint();
+  }, [githubData, hasSbt]);
 
   useEffect(() => {
     if (hasSbt && sbtAddress) {
@@ -527,20 +546,6 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
           )}
         </div>
       </motion.div>
-      
-      {/* Download Button */}
-      <button
-        onClick={saveAsImage}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-opacity-80 transition-colors duration-200"
-        style={{ 
-          background: devConfig.gradient,
-          border: `1px solid ${devConfig.primary}40`
-        }}
-        title="Save as image"
-      >
-        <Download className="w-5 h-5" style={{ color: devConfig.primary }} />
-        <span className="text-white">Save as Image</span>
-      </button>
     </div>
   );
 }; 

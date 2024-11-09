@@ -94,6 +94,7 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
     try {
       const response = await fetch(uri);
       const metadata = await response.json();
+      console.log('Fetched metadata:', metadata);
       return metadata;
     } catch (error) {
       console.error('Error fetching metadata:', error);
@@ -429,11 +430,13 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
                   <p className="text-white break-all">Token URI: {sbt.current_token_data.token_uri}</p>
                 </div>
                 <div className="mt-4">
-                  <img 
-                    src={`${sbt.current_token_data.token_uri.replace('metadata', 'roasts').replace('.json', '.png')}`}
-                    alt={`SBT for ${sbt.current_token_data.token_name}`}
-                    className="w-full rounded-lg"
-                  />
+                  {nftMetadata && nftMetadata.image && (
+                    <img 
+                      src={nftMetadata.image}
+                      alt={`SBT for ${sbt.current_token_data.token_name}`}
+                      className="w-full rounded-lg"
+                    />
+                  )}
                 </div>
               </div>
             ))}

@@ -19,7 +19,7 @@ const config = new AptosConfig({ network: Network.TESTNET });
 const aptos = new Aptos(config);
 export const moduleAddress =
   "0a9b9a08f54d21e5662694c9fa036b4f6907255f3b8ac552c84b2d374f5945b1";
-export const token = `${moduleAddress}::devx_token::DevxToken`;
+export const token = '0xcc12552de21078ebce251c0a09193eb7ea799316c77142165990cd96ea815b34';
 
 async function getMetadata(admin: Account): Promise<string> {
   const payload: InputViewFunctionData = {
@@ -35,16 +35,23 @@ const getFaBalance = async (
     ownerAddress: string,
     assetType: string
   ): Promise<number> => {
-    const data = await aptos.getCurrentFungibleAssetBalances({
-      options: {
-        where: {
-          owner_address: { _eq: ownerAddress },
-          asset_type: { _eq: assetType },
+    try {
+      const data = await aptos.getCurrentFungibleAssetBalances({
+        options: {
+          where: {
+            owner_address: { _eq: ownerAddress },
+            asset_type: { _eq: assetType },
+          },
         },
-      },
-    });
-    return data[0]?.amount ?? 0;
-  };
+      });
+      console.log('Raw balance data:', data); // Debug log
+      if (data.length === 0) return 0;
+      return Number(data[0]?.amount) || 0;
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      return 0;
+    }
+};
 
   const privateKey = new Ed25519PrivateKey(
     "0x55d8417da962242250e890c71ab846749022efa349b93e8486991173928da295"
@@ -70,16 +77,24 @@ export default function BattlePage() {
   useEffect(() => {
     const fetchBalance = async () => {
       if (userAddress) {
-        const balance = await getFaBalance(userAddress, token);
-        console.log(`Balance fetched for ${userAddress}: ${balance}`);
-        const balanceInDevx = balance / 100000000;
-        console.log(`Balance updated for ${userAddress}: ${balanceInDevx} DEVX`);
-        setBalance(balanceInDevx);
+        try {
+          const balance = await getFaBalance(userAddress, token);
+          console.log(`Raw balance: ${balance}`);
+          // Ensure we're doing proper number conversion
+          const balanceInDevx = Number(balance) / 100000000;
+          console.log(`Converted balance: ${balanceInDevx} DEVX`);
+          setBalance(balanceInDevx);
+        } catch (error) {
+          console.error('Error in fetchBalance:', error);
+        }
       }
     };
 
     if (userAddress) {
       fetchBalance();
+      // Set up polling to refresh balance every 10 seconds
+      const interval = setInterval(fetchBalance, 10000);
+      return () => clearInterval(interval);
     }
   }, [userAddress]);
 

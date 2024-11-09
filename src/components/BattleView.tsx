@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { BattleResult } from './BattleResult';
+import { BattleCard } from './BattleCard';
 
 interface NFTMetadata {
   image: string;
@@ -11,6 +13,7 @@ interface NFTMetadata {
 export function BattleView() {
   const [allNfts, setAllNfts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [battleResultData, setBattleResultData] = useState<any>(null);
 
   const fetchMetadata = async (uri: string): Promise<NFTMetadata> => {
     try {
@@ -149,7 +152,6 @@ export function BattleView() {
       
       console.log('Battle request payload:', battlePayload);
 
-      // Make API call to battle endpoint
       const response = await fetch('/api/battle/nft', {
         method: 'POST',
         headers: {
@@ -166,14 +168,8 @@ export function BattleView() {
       const battleResult = await response.json();
       console.log('Battle result:', battleResult);
       
-      // Show battle result in a more user-friendly way
-      if (battleResult.battleResult) {
-        // You can replace this with a modal or a better UI component
-        alert(battleResult.battleResult);
-      } else {
-        console.warn('Battle completed but no result was returned');
-        alert('Battle completed but no result was returned');
-      }
+      // Show battle result in modal
+      setBattleResultData(battleResult);
 
     } catch (error) {
       console.error('Error initiating battle:', error);
@@ -187,39 +183,28 @@ export function BattleView() {
 
   console.log('Rendering battle cards with NFTs:', allNfts);
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {allNfts.map((userNfts, userIndex) => (
-        userNfts.nfts.map((nft: any, nftIndex: number) => (
-          <motion.div
-            key={`${userIndex}-${nftIndex}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (userIndex * 0.1) + (nftIndex * 0.05) }}
-            className="bg-[#1E293B] rounded-xl p-6 border border-purple-600"
-          >
-            <div className="flex flex-col gap-4">
-              {nft.metadata?.image && (
-                <div className="rounded-lg overflow-hidden">
-                  <Image
-                    src={nft.metadata.image}
-                    alt={nft.current_token_data.token_name}
-                    width={500}
-                    height={500}
-                    className="w-full h-auto"
-                  />
-                </div>
-              )}
-              
-              <button 
-                onClick={() => handleBattleChallenge(nft, userNfts.username)}
-                className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Challenge to Battle
-              </button>
-            </div>
-          </motion.div>
-        ))
-      ))}
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-white mb-6">Available Battles</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {allNfts.map((userNfts, userIndex) => (
+          userNfts.nfts.map((nft: any, nftIndex: number) => (
+            <BattleCard
+              key={`${userIndex}-${nftIndex}`}
+              nft={nft}
+              username={userNfts.username}
+              onChallenge={() => handleBattleChallenge(nft, userNfts.username)}
+            />
+          ))
+        ))}
+      </div>
+
+      {battleResultData && (
+        <BattleResult
+          battleResult={battleResultData}
+          onClose={() => setBattleResultData(null)}
+        />
+      )}
     </div>
   );
 } 

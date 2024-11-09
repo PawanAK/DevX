@@ -113,6 +113,74 @@ export function BattleView() {
     fetchAllUserNfts();
   }, []);
 
+  const handleBattleChallenge = async (challengerNft: any, challengerUsername: string) => {
+    try {
+      console.log('Challenge initiated with:', {
+        challengerNft,
+        challengerUsername
+      });
+
+      const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+      
+      if (!currentUser) {
+        console.error('No current user found');
+        return;
+      }
+
+      console.log('Current user:', currentUser);
+
+      // Get metadata for challenger NFT
+      const challengerMetadata = await fetchMetadata(challengerNft.current_token_data.token_uri);
+      console.log('Challenger metadata:', challengerMetadata);
+      
+      const battlePayload = {
+        challenger: {
+          username: challengerUsername,
+          nftData: challengerMetadata,
+          tokenId: challengerNft.current_token_data.token_name,
+          nftUri: challengerNft.current_token_data.token_uri
+        },
+        defender: {
+          username: currentUser.username,
+          walletAddress: currentUser.walletAddress,
+          nftUri: challengerNft.current_token_data.token_uri
+        }
+      };
+      
+      console.log('Battle request payload:', battlePayload);
+
+      // Make API call to battle endpoint
+      const response = await fetch('/api/battle/nft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(battlePayload)
+      });
+
+      if (!response.ok) {
+        console.error('Battle request failed with status:', response.status);
+        throw new Error(`Battle request failed: ${response.statusText}`);
+      }
+
+      const battleResult = await response.json();
+      console.log('Battle result:', battleResult);
+      
+      // Show battle result in a more user-friendly way
+      if (battleResult.battleResult) {
+        // You can replace this with a modal or a better UI component
+        alert(battleResult.battleResult);
+      } else {
+        console.warn('Battle completed but no result was returned');
+        alert('Battle completed but no result was returned');
+      }
+
+    } catch (error) {
+      console.error('Error initiating battle:', error);
+      alert('Failed to initiate battle. Please try again.');
+    }
+  };
+
   if (loading) {
     return <div className="text-white text-center">Loading battle cards...</div>;
   }
@@ -142,7 +210,10 @@ export function BattleView() {
                 </div>
               )}
               
-              <button className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+              <button 
+                onClick={() => handleBattleChallenge(nft, userNfts.username)}
+                className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
                 Challenge to Battle
               </button>
             </div>

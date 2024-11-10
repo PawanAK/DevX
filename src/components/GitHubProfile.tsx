@@ -305,6 +305,10 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
 
   const uploadImageAndMetadata = async () => {
     console.log('Starting image and metadata upload process');
+    if (!githubData) {
+      throw new Error('GitHub data is not available');
+    }
+
     const dataUrl = await htmlToImage.toPng(cardRef.current!, {
       quality: 1.0,
       backgroundColor: '#1E293B',
@@ -362,10 +366,6 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
         {
           trait_type: "Developer Type",
           value: githubData.developer_type || ""
-        },
-        {
-          trait_type: "GitHub README",
-          value: githubData.profile_readme || "No README available"
         },
         {
           trait_type: "Last Updated",
@@ -483,92 +483,94 @@ export const GitHubProfile = ({ username }: GitHubProfileProps) => {
   const devConfig = getDevTypeConfig(githubData.developer_type);
 
   return (
-    <motion.div 
-      ref={cardRef}
-      className="rounded-xl p-6 shadow-lg border border-opacity-30"
-      style={{ 
-        borderColor: devConfig.primary,
-        background: devConfig.gradient
-      }}
-    >
-      {/* ID Card Header */}
-      <div 
-        className="text-center border-b pb-4 mb-4"
+    <div className="flex flex-col items-center gap-4">
+      <motion.div 
+        ref={cardRef}
+        className="rounded-xl p-6 shadow-lg border border-opacity-30"
         style={{ 
-          borderColor: `${devConfig.primary}40`,
-          background: `linear-gradient(90deg, ${devConfig.primary}10, ${devConfig.secondary}10)`
+          borderColor: devConfig.primary,
+          background: devConfig.gradient
         }}
       >
-        <div className="flex items-center justify-center gap-2">
-          {devConfig.icon}
-          <h1 className="text-lg font-bold" style={{ color: devConfig.primary }}>
-             DevX Card
-          </h1>
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center">
-        {/* Profile Photo with updated glow color */}
-        <motion.div
-          className="relative mb-4"
-          whileHover={{ scale: 1.05 }}
+        {/* ID Card Header */}
+        <div 
+          className="text-center border-b pb-4 mb-4"
+          style={{ 
+            borderColor: `${devConfig.primary}40`,
+            background: `linear-gradient(90deg, ${devConfig.primary}10, ${devConfig.secondary}10)`
+          }}
         >
-          <div 
-            className="absolute inset-0 rounded-full blur-md opacity-50"
-            style={{ background: `linear-gradient(to right, ${devConfig.primary}, ${devConfig.secondary})` }}
-          ></div>
-          <img
-            src={githubData.avatar_url}
-            alt={`${githubData.name || username}'s avatar`}
-            className="relative w-32 h-32 rounded-full border-4"
-            style={{ borderColor: devConfig.primary }}
-          />
-        </motion.div>
-
-        {/* Basic Info */}
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold text-white">{githubData.name || username}</h2>
-        </div>
-
-        {/* Details Grid */}
-        <div className="w-full space-y-2">
-          <div className="flex items-center gap-2 text-white">
-            <Users className="w-4 h-4" style={{ color: devConfig.primary }} />
-            <span className="text-gray-400">Followers/Following:</span>
-            <span>{githubData.followers}/{githubData.following}</span>
-          </div>
-          <div className="flex items-center gap-2 text-white">
-            <Book className="w-4 h-4" style={{ color: devConfig.primary }} />
-            <span className="text-gray-400">Repositories:</span>
-            <span>{githubData.public_repos}</span>
+          <div className="flex items-center justify-center gap-2">
+            {devConfig.icon}
+            <h1 className="text-lg font-bold" style={{ color: devConfig.primary }}>
+               DevX Card
+            </h1>
           </div>
         </div>
 
-        {/* Language Section */}
-        {githubData.top_languages?.length > 0 && (
-          <div className="w-full mt-4 pt-4 border-t" style={{ borderColor: `${devConfig.primary}40` }}>
-            <div className="flex items-center gap-2 mb-2">
-              <Code2 className="w-4 h-4" style={{ color: devConfig.primary }} />
-              <span className="text-white font-semibold">Top Languages</span>
+        <div className="flex flex-col items-center">
+          {/* Profile Photo with updated glow color */}
+          <motion.div
+            className="relative mb-4"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div 
+              className="absolute inset-0 rounded-full blur-md opacity-50"
+              style={{ background: `linear-gradient(to right, ${devConfig.primary}, ${devConfig.secondary})` }}
+            ></div>
+            <img
+              src={githubData.avatar_url}
+              alt={`${githubData.name || username}'s avatar`}
+              className="relative w-32 h-32 rounded-full border-4"
+              style={{ borderColor: devConfig.primary }}
+            />
+          </motion.div>
+
+          {/* Basic Info */}
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold text-white">{githubData.name || username}</h2>
+          </div>
+
+          {/* Details Grid */}
+          <div className="w-full space-y-2">
+            <div className="flex items-center gap-2 text-white">
+              <Users className="w-4 h-4" style={{ color: devConfig.primary }} />
+              <span className="text-gray-400">Followers/Following:</span>
+              <span>{githubData.followers}/{githubData.following}</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {githubData.top_languages.slice(0, 3).map(({ language, percentage }) => (
-                <div
-                  key={language}
-                  className="px-2 py-1 rounded-full text-sm"
-                  style={{
-                    background: `linear-gradient(145deg, ${devConfig.primary}20, ${devConfig.secondary}20)`,
-                    border: `1px solid ${devConfig.primary}40`
-                  }}
-                >
-                  <span className="text-white">{language} </span>
-                  <span className="text-gray-400">{percentage}%</span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 text-white">
+              <Book className="w-4 h-4" style={{ color: devConfig.primary }} />
+              <span className="text-gray-400">Repositories:</span>
+              <span>{githubData.public_repos}</span>
             </div>
           </div>
-        )}
-      </div>
-    </motion.div>
+
+          {/* Language Section */}
+          {githubData.top_languages?.length > 0 && (
+            <div className="w-full mt-4 pt-4 border-t" style={{ borderColor: `${devConfig.primary}40` }}>
+              <div className="flex items-center gap-2 mb-2">
+                <Code2 className="w-4 h-4" style={{ color: devConfig.primary }} />
+                <span className="text-white font-semibold">Top Languages</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {githubData.top_languages.slice(0, 3).map(({ language, percentage }) => (
+                  <div
+                    key={language}
+                    className="px-2 py-1 rounded-full text-sm"
+                    style={{
+                      background: `linear-gradient(145deg, ${devConfig.primary}20, ${devConfig.secondary}20)`,
+                      border: `1px solid ${devConfig.primary}40`
+                    }}
+                  >
+                    <span className="text-white">{language} </span>
+                    <span className="text-gray-400">{percentage}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
   );
 }; 

@@ -8,12 +8,15 @@ const anthropic = new Anthropic({
 export async function POST(req: NextRequest) {
   try {
     const { challenger, defender } = await req.json();
+    console.log('Received battle request:', { challenger, defender });
 
     // Extract relevant attributes from NFT metadata
     const challengerAttributes = challenger.nftData.attributes || [];
+    console.log('Challenger attributes:', challengerAttributes);
     
     // Get defender's NFT data using GraphQL
     const defenderNftData = await fetchDefenderNFT(defender.walletAddress);
+    console.log('Defender NFT data:', defenderNftData);
     
     // Prepare battle context for AI
     const battleContext = `
@@ -25,6 +28,7 @@ export async function POST(req: NextRequest) {
 
       Attributes: ${JSON.stringify(defenderNftData.attributes)}
     `;
+    console.log('Battle context:', battleContext);
 
     // Use Claude to determine battle outcome
     const completion = await anthropic.messages.create({
@@ -40,14 +44,19 @@ export async function POST(req: NextRequest) {
           Roast: [brutal but funny roast from winner to loser]`
       }]
     });
+    console.log('AI completion:', completion);
 
     const result = completion.content[0].text;
+    console.log('Battle result:', result);
 
-    return NextResponse.json({
+    const response = {
       battleResult: result,
       challenger: challenger.username,
       defender: defender.username
-    });
+    };
+    console.log('Sending response:', response);
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('Battle error:', error);
@@ -56,6 +65,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function fetchDefenderNFT(walletAddress: string) {
+  console.log('Fetching defender NFT for wallet:', walletAddress);
   // Your existing GraphQL query implementation here
   // Similar to the query you provided
   const query = `query MyQuery {
@@ -82,8 +92,10 @@ async function fetchDefenderNFT(walletAddress: string) {
       body: JSON.stringify({ query })
     }
   );
+  console.log('GraphQL response:', response);
 
   const result = await response.json();
+  console.log('GraphQL result:', result);
   
   if (!result.data?.current_token_ownerships_v2?.length) {
     throw new Error('No NFTs found for defender');
@@ -91,9 +103,11 @@ async function fetchDefenderNFT(walletAddress: string) {
 
   // Get the first NFT owned by defender
   const nft = result.data.current_token_ownerships_v2[0];
+  console.log('Selected NFT:', nft);
   
   // Fetch metadata for the NFT
   const metadata = await fetch(nft.current_token_data.token_uri).then(res => res.json());
+  console.log('NFT metadata:', metadata);
 
   return {
     tokenId: nft.current_token_data.token_name,
